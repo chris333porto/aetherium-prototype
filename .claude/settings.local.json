@@ -26,7 +26,24 @@
       "Bash(tar -xzf /tmp/node.tar.gz -C /tmp/)",
       "Bash(/tmp/node-v20.18.3-darwin-arm64/bin/npm install:*)",
       "Bash(PATH=\"/tmp/node-v20.18.3-darwin-arm64/bin:$PATH\" npm install)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(find /Users/christopherporto/Desktop/Aetherium/prototype/node_modules/next/dist/docs -type f -name *.md)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(echo \"===FILE: $f===\")",
+      "Read(//Users/christopherporto/Desktop/Aetherium/prototype/**)",
+      "Bash(done)",
+      "Bash(pip install:*)",
+      "Bash(python scripts/generate_review_pdf.py)",
+      "Bash(python3 -m pip install reportlab --quiet)",
+      "Bash(python3 scripts/generate_review_pdf.py)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(grep -v \"//\\\\s*$\")",
+      "Bash(find /Users/christopherporto/Desktop/Aetherium/prototype/lib -type f -name *.ts -o -name *.tsx -o -name *.js -o -name *.json)",
+      "Bash(node -e \":*)"
     ]
   }
 }
