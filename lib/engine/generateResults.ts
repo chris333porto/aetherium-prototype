@@ -210,6 +210,31 @@ Seeker, Orchestrator, Avatar
 
 Select archetypes by matching the dimension score profile and narrative context together.
 
+## NARRATIVE FIELD INTERPRETATION
+
+When narrative context is provided, use it precisely. Do not summarize it — extract signal from it.
+
+**Pattern analysis** (recurring_pattern + avoidance):
+- The recurring_pattern reveals the user's most persistent internal obstacle.
+- Avoidance reveals what they already know but aren't doing.
+- Together, these define the true growth edge — not the obvious one, the real one.
+- Both fields should inform shadow_pattern and growth_edge.
+
+**Tension analysis** (recent_challenges + environment):
+- recent_challenges names what isn't working on the surface.
+- environment names what the person is structurally embedded in — their actual demands and constraints.
+- The tension between these two is often the core friction. It should appear in tension_statement.
+
+**Direction extraction** (desired_direction + deeper_pull):
+- desired_direction is the stated aspiration — often a plan or outcome.
+- deeper_pull is the underlying need — a quality of experience or being.
+- The gap between them (if present) is psychologically important. Reflect it in journey_phase and next_practices.
+
+**Energy contextualization** (energy_state + energy_sources):
+- energy_state (Scattered/Stuck/Stable/Focused/Driven) is the user's own classification of their current system.
+- energy_sources reveal what is already working — use these to anchor at least one next_practice in something accessible.
+- A user who is Scattered needs consolidation practices. Stuck needs activation. Stable needs expansion. Focused needs deepening. Driven needs integration.
+
 ## TONE AND MANDATE
 
 - Be precise and grounded. No vague spiritual language.
@@ -217,34 +242,57 @@ Select archetypes by matching the dimension score profile and narrative context 
 - The tension_statement should feel like a mirror — true enough to be uncomfortable.
 - Practices must be specific, actionable, and tied to a real dimension gap.
 - dashboard_focus.today must be a single concrete action, not a theme.
-- All interpretations should reflect what is true right now, and what is becoming possible next.`
+- All interpretations should reflect what is true right now, and what is becoming possible next.
+- When narrative fields are present, interpretations must reference them — not in generic terms, but through the actual content the user provided.`
 }
 
 function buildUserPrompt(input: GenerateResultsInput): string {
   const scores = input.dimensionScores
-  const valuesLine       = input.values?.length
-    ? `Core values (self-reported): ${input.values.join(', ')}`
+
+  // Split reflections: first 3 are past/present/future echoes; the rest are
+  // the extended narrative fields passed as labeled strings from payload.ts.
+  const allReflections = input.reflections ?? []
+  const extendedContext = allReflections.slice(3) // Environment, Recurring pattern, Avoidance, Deeper pull, Current energy, Energy sources
+
+  const valuesLine = input.values?.length
+    ? `\nCore values (self-reported): ${input.values.join(', ')}`
     : ''
-  const reflectionsBlock = input.reflections?.length
-    ? `\nPersonal reflections:\n${input.reflections.map(r => `- ${r}`).join('\n')}`
+
+  const extendedBlock = extendedContext.length > 0
+    ? `\n## EXTENDED CONTEXT\n${extendedContext.map(r => `${r}`).join('\n')}`
     : ''
 
   return `Analyze this person and generate their Aetherium intelligence profile.
 
 ## DIMENSION SCORES
-Aether (Intention): ${scores.aether}/100
-Fire   (Volition):  ${scores.fire}/100
-Air    (Cognition): ${scores.air}/100
-Water  (Emotion):   ${scores.water}/100
 Earth  (Action):    ${scores.earth}/100
+Water  (Emotion):   ${scores.water}/100
+Air    (Cognition): ${scores.air}/100
+Fire   (Volition):  ${scores.fire}/100
+Aether (Intention): ${scores.aether}/100
 
 ## NARRATIVE CONTEXT
-Past (what shaped them): ${input.past}
-Present (where they are now): ${input.present}
-Future (what they're moving toward): ${input.future}
-${valuesLine}${reflectionsBlock}
+What's been happening (recent challenges): ${input.past || '(not provided)'}
+Current life phase (where they are now):   ${input.present || '(not provided)'}
+Where they want to go (desired direction): ${input.future || '(not provided)'}
+${valuesLine}${extendedBlock}
 
-Generate the complete Aetherium results profile. Every field must reflect the specific person above — not a generic archetype. The tension_statement must name the real gap between their strongest and weakest dimension in the context of their narrative.`
+## INTERPRETATION INSTRUCTIONS
+
+1. **tension_statement**: Name the specific friction between their scores AND their narrative. If recurring_pattern and avoidance are present, use them — they reveal the real gap, not the obvious one. Write one precise sentence that would feel true enough to be uncomfortable.
+
+2. **growth_edge**: Identify the specific dimension that, if developed, would most unlock movement given their current phase, energy state, and avoidance pattern. Name what it unlocks.
+
+3. **dashboard_focus**:
+   - today: One concrete action grounded in their energy sources and strongest dimension.
+   - this_week: A directional theme that addresses the friction in their narrative.
+   - watch_out_for: The shadow pattern most likely to surface given their recurring_pattern and current energy.
+
+4. **next_practices**: Ground at least one practice in their energy sources (something already working). Address the gap between desired_direction and deeper_pull if both are present.
+
+5. **journey_phase**: Determine from the full picture — scores AND narrative. A high-scoring profile with significant avoidance and stuck energy may be in Confrontation, not Integration.
+
+Generate the complete Aetherium results profile. Every field must reflect the specific person above — not a generic archetype.`
 }
 
 // ─── Main function ────────────────────────────────────────────────────────────

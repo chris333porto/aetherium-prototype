@@ -108,16 +108,28 @@ export interface GeneratePayload {
 // ─── Raw localStorage shapes ──────────────────────────────────────────────────
 
 interface StoredIdentity {
-  name?:   string
-  email?:  string
+  firstName?: string
+  lastName?:  string
+  email?:     string
+  birthDate?: string
+  location?:  { city?: string; region?: string; country?: string; timezone?: string }
+  phone?:     string
   /** Future: comma-separated values field, not yet in UI. */
-  values?: string
+  values?:    string
 }
 
 interface StoredNarrative {
+  // Original fields (persisted to Supabase)
   life_phase?:        string
   recent_challenges?: string
   desired_direction?: string
+  // Extended fields (localStorage + AI payload only)
+  environment?:       string
+  recurring_pattern?: string
+  avoidance?:         string
+  deeper_pull?:       string
+  energy_state?:      string
+  energy_sources?:    string
 }
 
 // ─── Builder ──────────────────────────────────────────────────────────────────
@@ -164,8 +176,20 @@ export function buildGeneratePayload(
     ? identity.values.split(',').map(s => s.trim()).filter(Boolean)
     : undefined
 
-  // 5. Reflections — narrative fields as a string array for additional model context
-  const reflections = [past, present, future].filter(Boolean)
+  // 5. Reflections — all 9 narrative fields as labeled strings for the AI.
+  //    The three temporal anchors (past/present/future) are already in the top-level
+  //    fields; the six additional fields are passed here as labeled context so the
+  //    model can use them for richer pattern analysis.
+  const extra: string[] = [
+    narrative.environment       ? `Environment: ${narrative.environment.trim()}`             : '',
+    narrative.recurring_pattern ? `Recurring pattern: ${narrative.recurring_pattern.trim()}` : '',
+    narrative.avoidance         ? `Avoidance: ${narrative.avoidance.trim()}`                 : '',
+    narrative.deeper_pull       ? `Deeper pull: ${narrative.deeper_pull.trim()}`             : '',
+    narrative.energy_state      ? `Current energy: ${narrative.energy_state.trim()}`         : '',
+    narrative.energy_sources    ? `Energy sources: ${narrative.energy_sources.trim()}`       : '',
+  ].filter(Boolean)
+
+  const reflections = [...[past, present, future].filter(Boolean), ...extra]
 
   return {
     userId,

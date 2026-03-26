@@ -45,10 +45,22 @@ const PREVIEW_SCORING: ScoringResult = {
 const PREVIEW_NARRATIVE: NarrativeAnswers = {
   life_phase:
     'A period of deliberate transition — moving from a career built for security toward work that carries real meaning.',
+  environment:
+    'San Francisco — working from home most days. Fast-moving city energy, but personally in a quieter, more inward phase.',
   recent_challenges:
     'Difficulty committing to a direction. Clarity arrives in waves: a strong sense of what matters, then a pulling away when action is actually required.',
+  recurring_pattern:
+    'Clarity arrives in full, then recedes before I act on it. The gap between knowing and doing.',
+  avoidance:
+    'Committing to a direction publicly — telling people what I\'m building before I\'m certain it will work.',
   desired_direction:
     'To build something aligned with my own values — and to stop deferring the life I can see but have not yet stepped into.',
+  deeper_pull:
+    'To feel like my daily life is actually mine. That the things I spend time on reflect what I believe matters.',
+  energy_state:
+    'Focused',
+  energy_sources:
+    'Long uninterrupted mornings. Conversations with people who think carefully. Reading that challenges assumptions.',
 }
 
 // ─── Full payload (built with real engines) ───────────────────────────────────
@@ -87,14 +99,27 @@ export const PREVIEW_ANSWERS: Record<string, number> = {
 // ─── Identity ─────────────────────────────────────────────────────────────────
 
 export const PREVIEW_IDENTITY = {
-  name:  'Dev Preview',
-  email: 'preview@aetherium.dev',
+  firstName: 'Dev',
+  lastName:  'Preview',
+  email:     'preview@aetherium.dev',
+  birthDate: '1990-01-01',
+  location: {
+    city:    'San Francisco',
+    region:  'CA',
+    country: 'US',
+  },
 }
 
 export const PREVIEW_REFLECTIONS = {
   life_phase:          PREVIEW_NARRATIVE.life_phase,
+  environment:         'San Francisco — working from home most days. Fast-moving city energy, but personally in a quieter, more inward phase.',
   recent_challenges:   PREVIEW_NARRATIVE.recent_challenges,
+  recurring_pattern:   'Clarity arrives in full, then recedes before I act on it. The gap between knowing and doing.',
+  avoidance:           'Committing to a direction publicly — telling people what I\'m building before I\'m certain it will work.',
   desired_direction:   PREVIEW_NARRATIVE.desired_direction,
+  deeper_pull:         'To feel like my daily life is actually mine. That the things I spend time on reflect what I believe matters.',
+  energy_state:        'Focused',
+  energy_sources:      'Long uninterrupted mornings. Conversations with people who think carefully. Reading that challenges assumptions.',
 }
 
 // ─── Score history (for Progress Over Time section) ───────────────────────────

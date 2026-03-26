@@ -1,50 +1,87 @@
 /**
  * narrative.ts
- * Utilities for the qualitative narrative context fields.
- * These are collected before the Likert assessment and provide
- * life-context for the deterministic profile output.
+ * Types and utilities for the qualitative context layer.
+ *
+ * Collected on /assessment/context — stored in localStorage as `ae_narrative_answers`.
+ * The 3 original fields are preserved exactly; 6 new fields are added alongside them.
+ *
+ * Supabase columns (unchanged): narrative_life_phase, narrative_challenges, narrative_direction
+ * The 6 new fields are available for AI payload generation but are not yet written
+ * to named Supabase columns (future schema extension).
  */
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type EnergyState = 'Scattered' | 'Stuck' | 'Stable' | 'Focused' | 'Driven'
+
 export interface NarrativeAnswers {
-  life_phase: string
+  // ── CONTEXT — external reality ──────────────────────────────────────────────
+  /** Original field — preserved exactly. */
+  life_phase:        string
+  environment:       string
+
+  // ── FRICTION — where energy is stuck or leaking ─────────────────────────────
+  /** Original field — preserved exactly. */
   recent_challenges: string
+  recurring_pattern: string
+  avoidance:         string
+
+  // ── DIRECTION — internal pull toward what's next ─────────────────────────────
+  /** Original field — preserved exactly. */
   desired_direction: string
+  deeper_pull:       string
+
+  // ── ENERGY — current state and vitality ─────────────────────────────────────
+  /** One of: Scattered | Stuck | Stable | Focused | Driven */
+  energy_state:      string
+  energy_sources:    string
 }
 
 export const EMPTY_NARRATIVE: NarrativeAnswers = {
-  life_phase: '',
+  life_phase:        '',
+  environment:       '',
   recent_challenges: '',
+  recurring_pattern: '',
+  avoidance:         '',
   desired_direction: '',
+  deeper_pull:       '',
+  energy_state:      '',
+  energy_sources:    '',
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 /**
- * Parse a loose key-value map (e.g. from localStorage JSON) into a
- * typed NarrativeAnswers object with safe defaults.
+ * Parse a loose key-value map (e.g. from localStorage JSON) into a typed
+ * NarrativeAnswers with safe empty-string defaults.
+ * Backward-compatible: missing new fields default to ''.
  */
 export function parseNarrativeAnswers(
   raw: Record<string, string> | null | undefined
 ): NarrativeAnswers {
   if (!raw) return { ...EMPTY_NARRATIVE }
+  const s = (k: string) => (raw[k] ?? '').trim()
   return {
-    life_phase:          (raw.life_phase          ?? '').trim(),
-    recent_challenges:   (raw.recent_challenges   ?? '').trim(),
-    desired_direction:   (raw.desired_direction   ?? '').trim(),
+    life_phase:        s('life_phase'),
+    environment:       s('environment'),
+    recent_challenges: s('recent_challenges'),
+    recurring_pattern: s('recurring_pattern'),
+    avoidance:         s('avoidance'),
+    desired_direction: s('desired_direction'),
+    deeper_pull:       s('deeper_pull'),
+    energy_state:      s('energy_state'),
+    energy_sources:    s('energy_sources'),
   }
 }
 
-/**
- * Returns true if the user supplied any narrative content.
- */
+/** Returns true if the user supplied any narrative content. */
 export function hasNarrativeContent(answers: NarrativeAnswers): boolean {
-  return (
-    answers.life_phase.length > 0 ||
-    answers.recent_challenges.length > 0 ||
-    answers.desired_direction.length > 0
-  )
+  return Object.values(answers).some(v => v.length > 0)
 }
 
 /**
- * Return a flat string summary of narrative answers for display or logging.
+ * Flat string summary of the three Supabase-persisted fields.
+ * (Used by generating/page.tsx before Supabase save.)
  */
 export function narrativeSummary(answers: NarrativeAnswers): string {
   const parts: string[] = []
@@ -54,6 +91,6 @@ export function narrativeSummary(answers: NarrativeAnswers): string {
   return parts.join(' | ')
 }
 
-// Re-export NARRATIVE_FIELDS from questions for convenience
+// Re-export for convenience
 export { NARRATIVE_FIELDS } from './questions'
 export type { NarrativeField } from './questions'

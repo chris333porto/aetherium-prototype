@@ -1,171 +1,119 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/Button'
-import { PreviewNav } from '@/components/dev/PreviewNav'
-import { PREVIEW_IDENTITY, PREVIEW_REFLECTIONS } from '@/lib/dev/previewMock'
+import { useState, useEffect }  from 'react'
+import { useRouter }             from 'next/navigation'
+import Link                      from 'next/link'
+import { Button }                from '@/components/ui/Button'
+import { PreviewNav }            from '@/components/dev/PreviewNav'
+import { PREVIEW_IDENTITY }      from '@/lib/dev/previewMock'
 
-// Minimal Web Speech API typings
-interface AeSpeechRecognition extends EventTarget {
-  continuous: boolean
-  interimResults: boolean
-  lang: string
-  start(): void
-  stop(): void
-  onresult: ((event: AeSpeechRecognitionEvent) => void) | null
-  onend:    (() => void) | null
-  onerror:  (() => void) | null
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  width:      '100%',
+  background: 'rgba(234,232,242,0.025)',
+  border:     '1px solid rgba(234,232,242,0.08)',
+  borderRadius: 2,
+  padding:    '11px 14px',
+  color:      'rgba(234,232,242,0.78)',
+  fontSize:   15,
+  fontFamily: "'Cormorant Garamond', serif",
+  lineHeight: 1.5,
+  outline:    'none',
+  transition: 'border-color 0.2s',
 }
-interface AeSpeechRecognitionEvent extends Event {
-  results: { length: number; [i: number]: { [i: number]: { transcript: string } } }
+
+const labelStyle: React.CSSProperties = {
+  fontFamily:    "'Cinzel', serif",
+  fontSize:      8,
+  letterSpacing: '0.28em',
+  textTransform: 'uppercase',
+  color:         'rgba(149,144,236,0.48)',
 }
-type AeSpeechRecognitionConstructor = new () => AeSpeechRecognition
 
-const REFLECTION_FIELDS = [
-  {
-    id: 'life_phase',
-    label: 'Current Life Phase',
-    placeholder: 'What season of life are you in right now? (e.g. early career, rebuilding, transition, building something new…)',
-    rows: 3,
-  },
-  {
-    id: 'recent_challenges',
-    label: 'Recent Challenges',
-    placeholder: 'What has been pulling at you lately? What isn\'t working, or feels unresolved?',
-    rows: 4,
-  },
-  {
-    id: 'desired_direction',
-    label: 'Desired Direction',
-    placeholder: 'If you could change one thing about how you\'re living or showing up — what would it be?',
-    rows: 4,
-  },
-]
+const optionalTag: React.CSSProperties = {
+  color: 'rgba(234,232,242,0.2)',
+}
 
-function MicButton({
-  onTranscript,
-  fieldId,
+// ─── FieldGroup ───────────────────────────────────────────────────────────────
+
+function FieldGroup({
+  label,
+  optional,
+  children,
 }: {
-  onTranscript: (id: string, text: string) => void
-  fieldId: string
+  label: string
+  optional?: boolean
+  children: React.ReactNode
 }) {
-  const [listening, setListening] = useState(false)
-  const recognitionRef = useRef<AeSpeechRecognition | null>(null)
-
-  const toggle = useCallback(() => {
-    if (typeof window === 'undefined') return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognitionAPI: AeSpeechRecognitionConstructor | undefined =
-      (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
-
-    if (!SpeechRecognitionAPI) return
-
-    if (listening) {
-      recognitionRef.current?.stop()
-      setListening(false)
-      return
-    }
-
-    const recognition = new SpeechRecognitionAPI()
-    recognition.continuous = true
-    recognition.interimResults = false
-    recognition.lang = 'en-US'
-
-    recognition.onresult = (event: AeSpeechRecognitionEvent) => {
-      const transcript = Array.from(
-        { length: event.results.length },
-        (_, i) => event.results[i][0].transcript
-      ).join(' ')
-      onTranscript(fieldId, transcript)
-    }
-
-    recognition.onend = () => setListening(false)
-    recognition.onerror = () => setListening(false)
-
-    recognitionRef.current = recognition
-    recognition.start()
-    setListening(true)
-  }, [listening, fieldId, onTranscript])
-
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      title={listening ? 'Stop recording' : 'Speak your answer'}
-      style={{
-        flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        width: 26, height: 26, borderRadius: '50%',
-        background: listening ? 'rgba(149,144,236,0.14)' : 'rgba(234,232,242,0.04)',
-        border: listening ? '1px solid rgba(149,144,236,0.48)' : '1px solid rgba(234,232,242,0.08)',
-        boxShadow: listening ? '0 0 10px rgba(149,144,236,0.25)' : 'none',
-        cursor: 'pointer', transition: 'all 0.2s',
-      }}
-    >
-      <svg width="11" height="13" viewBox="0 0 12 14" fill="none" style={{ opacity: listening ? 1 : 0.3 }}>
-        <rect x="3.5" y="0.5" width="5" height="8" rx="2.5"
-          stroke={listening ? '#9590ec' : 'rgba(234,232,242,0.8)'} strokeWidth="1"
-          fill={listening ? 'rgba(149,144,236,0.18)' : 'none'} />
-        <path d="M1 7.5C1 10.2614 3.23858 12.5 6 12.5C8.76142 12.5 11 10.2614 11 7.5"
-          stroke={listening ? '#9590ec' : 'rgba(234,232,242,0.8)'} strokeWidth="1" strokeLinecap="round" />
-        <line x1="6" y1="12.5" x2="6" y2="13.5"
-          stroke={listening ? '#9590ec' : 'rgba(234,232,242,0.8)'} strokeWidth="1" strokeLinecap="round" />
-      </svg>
-    </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <label style={labelStyle}>
+        {label}{optional && <span style={optionalTag}> (optional)</span>}
+      </label>
+      {children}
+    </div>
   )
 }
 
+function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      style={inputStyle}
+      onFocus={e => { e.currentTarget.style.borderColor = 'rgba(149,144,236,0.32)' }}
+      onBlur={e  => { e.currentTarget.style.borderColor = 'rgba(234,232,242,0.08)' }}
+    />
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function IdentityPage() {
   const router = useRouter()
-  const [name, setName]   = useState('')
-  const [email, setEmail] = useState('')
-  const [reflections, setReflections] = useState<Record<string, string>>({
-    life_phase: '',
-    recent_challenges: '',
-    desired_direction: '',
-  })
+
+  const [firstName, setFirstName] = useState('')
+  const [lastName,  setLastName]  = useState('')
+  const [email,     setEmail]     = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [city,      setCity]      = useState('')
+  const [region,    setRegion]    = useState('')
+  const [country,   setCountry]   = useState('')
 
   // DEV: pre-fill fields when ?preview=1 is active
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('preview') !== '1') return
-    setName(PREVIEW_IDENTITY.name)
+    setFirstName(PREVIEW_IDENTITY.firstName)
+    setLastName(PREVIEW_IDENTITY.lastName)
     setEmail(PREVIEW_IDENTITY.email)
-    setReflections(PREVIEW_REFLECTIONS)
+    setBirthDate(PREVIEW_IDENTITY.birthDate)
+    setCity(PREVIEW_IDENTITY.location?.city ?? '')
+    setRegion(PREVIEW_IDENTITY.location?.region ?? '')
+    setCountry(PREVIEW_IDENTITY.location?.country ?? '')
   }, [])
 
-  function handleReflectionChange(id: string, val: string) {
-    setReflections(prev => ({ ...prev, [id]: val }))
-  }
-
-  function handleTranscript(id: string, text: string) {
-    setReflections(prev => ({
-      ...prev,
-      [id]: prev[id] ? `${prev[id]} ${text}` : text,
-    }))
-  }
-
   function handleContinue() {
-    localStorage.setItem('ae_identity', JSON.stringify({ name, email }))
-    localStorage.setItem('ae_narrative_answers', JSON.stringify(reflections))
+    // Auto-detect timezone (browser API, non-blocking)
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+    localStorage.setItem('ae_identity', JSON.stringify({
+      firstName: firstName.trim(),
+      lastName:  lastName.trim(),
+      email:     email.trim(),
+      birthDate: birthDate.trim(),
+      location: {
+        city:     city.trim()    || undefined,
+        region:   region.trim()  || undefined,
+        country:  country.trim() || undefined,
+        timezone: timezone       || undefined,
+      },
+    }))
+
     router.push('/assessment')
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'rgba(234,232,242,0.025)',
-    border: '1px solid rgba(234,232,242,0.08)',
-    borderRadius: 2,
-    padding: '11px 14px',
-    color: 'rgba(234,232,242,0.78)',
-    fontSize: 15,
-    fontFamily: "'Cormorant Garamond', serif",
-    lineHeight: 1.5,
-    outline: 'none',
-    transition: 'border-color 0.2s',
-  }
+  const canContinue = firstName.trim() && lastName.trim() && email.trim() && birthDate.trim()
 
   return (
     <main className="page-atmosphere flex flex-col" style={{ minHeight: '100vh' }}>
@@ -202,7 +150,6 @@ export default function IdentityPage() {
         width: '100%', position: 'relative', zIndex: 10,
       }}>
 
-        {/* Eyebrow */}
         <p style={{
           fontFamily: "'Cinzel', serif", fontSize: 9, letterSpacing: '0.5em',
           textTransform: 'uppercase', color: 'rgba(149,144,236,0.45)',
@@ -211,128 +158,99 @@ export default function IdentityPage() {
           Enter the Field
         </p>
 
-        {/* Headline */}
         <h1 style={{
           fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 'clamp(28px, 3.8vw, 42px)',
-          fontWeight: 300,
-          color: '#eae8f2',
-          letterSpacing: '-0.015em',
-          lineHeight: 1.12,
-          marginBottom: '1rem',
+          fontSize: 'clamp(28px, 3.8vw, 42px)', fontWeight: 300,
+          color: '#eae8f2', letterSpacing: '-0.015em',
+          lineHeight: 1.12, marginBottom: '1rem',
         }}>
-          Let&apos;s begin with your lived reality.
+          This begins with who you are.
         </h1>
 
         <p style={{
           fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 'clamp(14px, 1.5vw, 17px)',
-          fontStyle: 'italic',
-          color: 'rgba(234,232,242,0.5)',
-          lineHeight: 1.78,
-          maxWidth: 460,
-          marginBottom: '2.5rem',
+          fontSize: 'clamp(14px, 1.5vw, 17px)', fontStyle: 'italic',
+          color: 'rgba(234,232,242,0.5)', lineHeight: 1.78,
+          maxWidth: 460, marginBottom: '2.5rem',
         }}>
-          The more honestly you answer, the more precisely your profile will reflect you.
-          There are no correct responses — only true ones.
+          Used only to personalise your profile. Never shared.
         </p>
 
-        {/* Name + Email */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{
-              fontFamily: "'Cinzel', serif", fontSize: 8, letterSpacing: '0.28em',
-              textTransform: 'uppercase', color: 'rgba(149,144,236,0.48)',
-            }}>
-              Your Name
-            </label>
-            <input
-              type="text"
-              placeholder="How you think of yourself"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              style={inputStyle}
-              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(149,144,236,0.32)' }}
-              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(234,232,242,0.08)' }}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem', marginBottom: '2.5rem' }}>
+
+          {/* Name row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <FieldGroup label="First Name">
+              <Input
+                type="text"
+                placeholder="First name"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+              />
+            </FieldGroup>
+            <FieldGroup label="Last Name">
+              <Input
+                type="text"
+                placeholder="Last name"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+              />
+            </FieldGroup>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{
-              fontFamily: "'Cinzel', serif", fontSize: 8, letterSpacing: '0.28em',
-              textTransform: 'uppercase', color: 'rgba(149,144,236,0.48)',
-            }}>
-              Email <span style={{ color: 'rgba(234,232,242,0.2)' }}>(optional)</span>
-            </label>
-            <input
+
+          {/* Email */}
+          <FieldGroup label="Email">
+            <Input
               type="email"
-              placeholder="To save your profile"
+              placeholder="you@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              style={inputStyle}
-              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(149,144,236,0.32)' }}
-              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(234,232,242,0.08)' }}
             />
-          </div>
-        </div>
+          </FieldGroup>
 
-        {/* Divider */}
-        <div style={{
-          height: 1, marginBottom: '2rem',
-          background: 'linear-gradient(to right, rgba(149,144,236,0.15), transparent)',
-        }} />
+          {/* Birth date */}
+          <FieldGroup label="Date of Birth">
+            <Input
+              type="date"
+              value={birthDate}
+              onChange={e => setBirthDate(e.target.value)}
+              style={{ ...inputStyle, colorScheme: 'dark' }}
+            />
+          </FieldGroup>
 
-        {/* Reflection fields */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8rem', marginBottom: '2rem' }}>
-          {REFLECTION_FIELDS.map(field => (
-            <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <label style={{
-                  fontFamily: "'Cinzel', serif", fontSize: 8, letterSpacing: '0.28em',
-                  textTransform: 'uppercase', color: 'rgba(149,144,236,0.5)',
-                }}>
-                  {field.label}
-                </label>
-                <MicButton fieldId={field.id} onTranscript={handleTranscript} />
-              </div>
-              <textarea
-                rows={field.rows}
-                placeholder={field.placeholder}
-                value={reflections[field.id] ?? ''}
-                onChange={e => handleReflectionChange(field.id, e.target.value)}
-                style={{
-                  ...inputStyle,
-                  resize: 'none',
-                  paddingTop: '12px',
-                  paddingBottom: '12px',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(149,144,236,0.32)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(234,232,242,0.08)' }}
+          {/* Location */}
+          <div>
+            <label style={{ ...labelStyle, display: 'block', marginBottom: '0.6rem' }}>
+              Location <span style={optionalTag}>(optional)</span>
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+              <Input
+                type="text"
+                placeholder="City"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+              />
+              <Input
+                type="text"
+                placeholder="State / Region"
+                value={region}
+                onChange={e => setRegion(e.target.value)}
+              />
+              <Input
+                type="text"
+                placeholder="Country"
+                value={country}
+                onChange={e => setCountry(e.target.value)}
               />
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Note */}
-        <div style={{
-          paddingLeft: '1.2rem', paddingTop: '0.75rem', paddingBottom: '0.75rem',
-          borderLeft: '2px solid rgba(149,144,236,0.18)',
-          background: 'rgba(149,144,236,0.025)',
-          marginBottom: '2.5rem',
-        }}>
-          <p style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 14, color: 'rgba(234,232,242,0.44)', lineHeight: 1.65,
-            fontStyle: 'italic',
-          }}>
-            You can speak your answers — tap the microphone icon next to any field.
-            Your words will be transcribed in real time.
-          </p>
         </div>
 
         {/* CTAs */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Button size="lg" onClick={handleContinue}>
-            Enter the Assessment →
+          <Button size="lg" onClick={handleContinue} disabled={!canContinue}>
+            Begin Assessment →
           </Button>
           <Link href="/onboarding/welcome">
             <Button variant="ghost" size="lg">← Go Back</Button>
@@ -341,7 +259,6 @@ export default function IdentityPage() {
 
       </div>
 
-      {/* DEV: preview navigator — only visible when ?preview=1 */}
       <PreviewNav />
     </main>
   )

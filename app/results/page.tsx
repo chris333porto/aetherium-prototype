@@ -1170,9 +1170,83 @@ export default function ResultsPage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════
+            SAVE PROFILE — post-results conversion
+        ══════════════════════════════════════════════════════════════════ */}
+        <div style={{
+          marginTop:     80,
+          padding:       '3rem 2.5rem',
+          background:    'rgba(149,144,236,0.04)',
+          border:        '1px solid rgba(149,144,236,0.12)',
+          borderRadius:  6,
+          textAlign:     'center',
+          display:       'flex',
+          flexDirection: 'column',
+          alignItems:    'center',
+          gap:           '1.5rem',
+        }}>
+          <p style={{
+            fontFamily: "'Cinzel', serif", fontSize: 8,
+            letterSpacing: '0.45em', textTransform: 'uppercase',
+            color: 'rgba(149,144,236,0.5)',
+          }}>
+            Continue Your Path
+          </p>
+
+          <h2 style={{
+            fontFamily:    "'Cormorant Garamond', serif",
+            fontSize:      'clamp(24px, 3.2vw, 36px)',
+            fontWeight:    300,
+            color:         '#eae8f2',
+            letterSpacing: '-0.012em',
+            lineHeight:    1.15,
+            maxWidth:      440,
+          }}>
+            Save this profile and carry it forward.
+          </h2>
+
+          <p style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize:   16,
+            color:      'rgba(234,232,242,0.45)',
+            lineHeight: 1.78,
+            maxWidth:   460,
+            fontStyle:  'italic',
+          }}>
+            This is a precise snapshot of where you are right now. Save it to
+            track your evolution, revisit your results, and build your dashboard
+            over time.
+          </p>
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+            <Button size="lg">
+              Save your profile and continue
+            </Button>
+            <Button variant="ghost" size="lg">
+              Not now
+            </Button>
+          </div>
+
+          {/* Optional phone step */}
+          <p style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize:   13,
+            color:      'rgba(234,232,242,0.22)',
+            lineHeight: 1.65,
+            marginTop:  '0.5rem',
+            fontStyle:  'italic',
+          }}>
+            Or{' '}
+            <span style={{ color: 'rgba(149,144,236,0.4)', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(149,144,236,0.18)' }}>
+              send this to your phone
+            </span>
+            {' '}and return when you&apos;re ready.
+          </p>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════
             FOOTER
         ══════════════════════════════════════════════════════════════════ */}
-        <div style={{ borderTop: '1px solid rgba(234,232,242,0.06)', marginTop: 88, paddingTop: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+        <div style={{ borderTop: '1px solid rgba(234,232,242,0.06)', marginTop: 64, paddingTop: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
           <p style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(234,232,242,0.18)', lineHeight: 1.8 }}>
             Aetherium · Personal Intelligence System
             <br />

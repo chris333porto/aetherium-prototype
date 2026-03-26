@@ -11,6 +11,7 @@
 import { supabase } from '../supabase'
 import { QUESTIONS } from '../assessment/questions'
 import type { RawAnswers } from '../scoring/engine'
+import type { NarrativeAnswers } from '../assessment/narrative'
 import { ASSESSMENT_VERSION, PROFILE_MODEL_VERSION } from '../types/results'
 
 export interface SavedAssessment {
@@ -78,12 +79,14 @@ export async function saveAssessmentAnswers(
 }
 
 /**
- * Save free-text narrative answers (life phase, challenges, direction).
- * Each is stored as a separate row with question_type='narrative'.
+ * Save narrative answers. Each non-empty field is stored as a separate row
+ * with question_type='narrative'. The three original fields (life_phase,
+ * recent_challenges, desired_direction) map to named Supabase columns
+ * upstream; the six additional fields are stored as generic answer rows.
  */
 export async function saveNarrativeAnswers(
   assessmentId: string,
-  narrative: { life_phase: string; recent_challenges: string; desired_direction: string }
+  narrative: NarrativeAnswers
 ): Promise<void> {
   const rows = Object.entries(narrative)
     .filter(([, v]) => v && v.trim().length > 0)

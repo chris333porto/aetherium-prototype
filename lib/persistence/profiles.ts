@@ -11,6 +11,7 @@ import type { ScoringResult, EvolutionState, DimensionProfile } from '../scoring
 import type { ArchetypeBlend } from '../archetypes/matcher'
 import type { GrowthProfile } from '../pathways/growth'
 import type { NarrativeAnswers } from '../assessment/narrative'
+import { EMPTY_NARRATIVE } from '../assessment/narrative'
 import type { Dimension } from '../assessment/questions'
 import { ASSESSMENT_VERSION, PROFILE_MODEL_VERSION, buildResultPayload } from '../types/results'
 import type { ResultPayload } from '../types/results'
@@ -228,10 +229,12 @@ export async function fetchAndReconstructPayload(
   const archetypeBlend = buildArchetypeBlend(dimensions)
   const growthProfile  = buildGrowthProfile(dimensions)
 
+  // Only the 3 original fields are persisted in Supabase; the rest default to ''.
   const narrative: NarrativeAnswers = {
-    life_phase:         (ps.narrative_life_phase  as string | null) ?? '',
-    recent_challenges:  (ps.narrative_challenges  as string | null) ?? '',
-    desired_direction:  (ps.narrative_direction   as string | null) ?? '',
+    ...EMPTY_NARRATIVE,
+    life_phase:        (ps.narrative_life_phase as string | null) ?? '',
+    recent_challenges: (ps.narrative_challenges as string | null) ?? '',
+    desired_direction: (ps.narrative_direction  as string | null) ?? '',
   }
 
   return buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, {

@@ -13,11 +13,10 @@ import type { RawAnswers } from '@/lib/scoring/engine'
 import type { Dimension } from '@/lib/assessment/questions'
 
 const STEPS = [
-  'Reading your responses',
-  'Computing dimensional scores',
-  'Mapping archetype resonance',
-  'Identifying growth edges',
-  'Constructing evolution pathway',
+  'Reading your field',
+  'Mapping dimensional tension',
+  'Identifying your pattern',
+  'Locating your growth edge',
   'Assembling your profile',
 ]
 
@@ -118,13 +117,13 @@ export default function GeneratingPage() {
             className="font-cinzel text-xs uppercase tracking-[0.55em] mb-4"
             style={{ color: 'rgba(149,144,236,0.4)' }}
           >
-            Constructing your profile
+            Mapping Your Current State
           </p>
           <p
             className="font-cormorant text-base leading-relaxed"
             style={{ color: 'rgba(234,232,242,0.28)', letterSpacing: '0.02em' }}
           >
-            Your responses are being woven into a living map of who you are right now.
+            We&apos;re mapping your current state.
           </p>
         </div>
 
@@ -173,7 +172,7 @@ export default function GeneratingPage() {
           className="font-cormorant text-sm text-center"
           style={{ color: 'rgba(234,232,242,0.2)', letterSpacing: '0.05em' }}
         >
-          {done ? 'Your profile is ready.' : 'Mapping your dimensional state...'}
+          {done ? 'Your profile is ready.' : 'Mapping your dimensional state…'}
         </p>
       </div>
 

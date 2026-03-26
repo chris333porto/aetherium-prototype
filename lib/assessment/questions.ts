@@ -176,7 +176,10 @@ export const DIMENSION_META: Record<Dimension, {
   },
 }
 
-export const DIMENSIONS_ORDER: Dimension[] = ['aether', 'fire', 'air', 'water', 'earth']
+// Earth → Water → Air → Fire → Aether
+// Rationale: begin with observable reality, move through emotion and cognition,
+// end with purpose when the user is most open and self-aware.
+export const DIMENSIONS_ORDER: Dimension[] = ['earth', 'water', 'air', 'fire', 'aether']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

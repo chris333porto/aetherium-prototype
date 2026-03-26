@@ -26,11 +26,12 @@ interface PreviewStep {
 const STEPS: PreviewStep[] = [
   { label: 'Welcome',       url: '/onboarding/welcome?preview=1',      pathname: '/onboarding/welcome'    },
   { label: 'Identity',      url: '/assessment/identity?preview=1',     pathname: '/assessment/identity'   },
-  { label: '1 · Aether',    url: '/assessment?preview=1&step=0',       pathname: '/assessment', step: '0' },
-  { label: '2 · Fire',      url: '/assessment?preview=1&step=1',       pathname: '/assessment', step: '1' },
+  { label: '1 · Earth',     url: '/assessment?preview=1&step=0',       pathname: '/assessment', step: '0' },
+  { label: '2 · Water',     url: '/assessment?preview=1&step=1',       pathname: '/assessment', step: '1' },
   { label: '3 · Air',       url: '/assessment?preview=1&step=2',       pathname: '/assessment', step: '2' },
-  { label: '4 · Water',     url: '/assessment?preview=1&step=3',       pathname: '/assessment', step: '3' },
-  { label: '5 · Earth',     url: '/assessment?preview=1&step=4',       pathname: '/assessment', step: '4' },
+  { label: '4 · Fire',      url: '/assessment?preview=1&step=3',       pathname: '/assessment', step: '3' },
+  { label: '5 · Aether',    url: '/assessment?preview=1&step=4',       pathname: '/assessment', step: '4' },
+  { label: 'Context',       url: '/assessment/context?preview=1',      pathname: '/assessment/context'    },
   { label: 'Results',       url: '/results?preview=1',                 pathname: '/results'               },
 ]
 

@@ -286,8 +286,9 @@ function DimensionStep({
 
 export default function AssessmentPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0) // 0–4 = dimensions 1–5
-  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [step, setStep]               = useState(0) // 0–4 = dimensions 1–5
+  const [answers, setAnswers]         = useState<Record<string, number>>({})
+  const [showTransition, setShowTransition] = useState(false)
   const assessmentIdRef = useRef<string | null>(null)
 
   // Create assessment record on mount — fire-and-forget, non-blocking
@@ -315,8 +316,15 @@ export default function AssessmentPage() {
     setAnswers(PREVIEW_ANSWERS)
   }, [])
 
+  // Auto-advance from transition screen → context
+  useEffect(() => {
+    if (!showTransition) return
+    const t = setTimeout(() => router.push('/assessment/context'), 2800)
+    return () => clearTimeout(t)
+  }, [showTransition, router])
+
   const currentDimension = DIMENSIONS_ORDER[step]
-  const dimensionColor = DIMENSION_META[currentDimension].color
+  const dimensionColor   = DIMENSION_META[currentDimension].color
 
   function handleAnswer(questionId: string, value: number) {
     setAnswers(prev => ({ ...prev, [questionId]: value }))
@@ -337,8 +345,9 @@ export default function AssessmentPage() {
       setStep(s => s + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
+      // Final step (Aether) — save answers, show transition bridge
       localStorage.setItem('ae_assessment_answers', JSON.stringify(answers))
-      router.push('/generating')
+      setShowTransition(true)
     }
   }
 
@@ -349,6 +358,55 @@ export default function AssessmentPage() {
       setStep(s => s - 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }
+
+  // ── Transition bridge: pattern measured → lived reality ──────────────────────
+  if (showTransition) {
+    return (
+      <main className="page-atmosphere flex items-center justify-center" style={{ minHeight: '100vh' }}>
+        <EnergyField size={500} opacity={0.35} color="#9590ec" />
+        <div
+          className="relative z-10 flex flex-col items-center text-center"
+          style={{ maxWidth: 480, padding: '0 2.5rem' }}
+        >
+          <p style={{
+            fontFamily: "'Cinzel', serif", fontSize: 8,
+            letterSpacing: '0.55em', textTransform: 'uppercase',
+            color: 'rgba(149,144,236,0.45)', marginBottom: '2rem',
+          }}>
+            Dimensions Mapped
+          </p>
+          <h2 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 300,
+            color: '#eae8f2', letterSpacing: '-0.015em',
+            lineHeight: 1.1, marginBottom: '1.25rem',
+          }}>
+            Your elemental pattern is complete.
+          </h2>
+          <p style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: 'clamp(15px, 1.6vw, 18px)', fontStyle: 'italic',
+            color: 'rgba(234,232,242,0.45)', lineHeight: 1.75,
+            marginBottom: '2.5rem',
+          }}>
+            Now we need to understand the life it&apos;s running through.
+          </p>
+          <button
+            onClick={() => router.push('/assessment/context')}
+            style={{
+              fontFamily: "'Cinzel', serif", fontSize: 9,
+              letterSpacing: '0.35em', textTransform: 'uppercase',
+              color: 'rgba(149,144,236,0.6)', background: 'transparent',
+              border: '1px solid rgba(149,144,236,0.2)', borderRadius: 3,
+              padding: '10px 22px', cursor: 'pointer', transition: 'all 0.2s',
+            }}
+          >
+            Continue →
+          </button>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -390,6 +448,33 @@ export default function AssessmentPage() {
       </div>
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '3.5rem 2.5rem 5rem', position: 'relative', zIndex: 10 }}>
+
+        {/* Priming moment — shown only on the first step (Earth) */}
+        {step === 0 && (
+          <div style={{
+            marginBottom: '3rem',
+            padding: '1.25rem 1.4rem',
+            borderLeft: '2px solid rgba(45,184,133,0.25)',
+            background: 'rgba(45,184,133,0.025)',
+          }}>
+            <p style={{
+              fontFamily: "'Cinzel', serif", fontSize: 7.5,
+              letterSpacing: '0.35em', textTransform: 'uppercase',
+              color: 'rgba(45,184,133,0.5)', marginBottom: '0.6rem',
+            }}>
+              Before You Begin
+            </p>
+            <p style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: 16, color: 'rgba(234,232,242,0.52)',
+              lineHeight: 1.72, fontStyle: 'italic',
+            }}>
+              Answer from where you actually are — not where you&apos;re working
+              toward. Not your best self. Your current self, right now.
+            </p>
+          </div>
+        )}
+
         <DimensionStep
           key={currentDimension}
           dimension={currentDimension}
