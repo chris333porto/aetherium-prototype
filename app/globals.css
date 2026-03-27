@@ -902,3 +902,86 @@ select optgroup {
     #08080e;
   min-height: 100vh;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DESKTOP ONLY — restore hero parallax
+   (removed from inline style to fix iOS Safari blur)
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  .hp-hero { background-attachment: fixed; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE — tighten spacing and fix layout issues
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Section padding: 10rem → 5rem ── */
+  .s-band { padding: 5rem 0; }
+  .s-inner { padding: 0 1.25rem; }
+  .s-center { padding: 0 1.25rem; }
+
+  /* ── Hero ── */
+  .hp-hero { padding: 5.5rem 1.5rem 3rem; }
+  .hero-sub { margin-bottom: 2rem; }
+  .scroll-hint { margin-top: 2rem; }
+  .scroll-line { height: 28px; }
+
+  /* ── CTA button: reduce horizontal padding, ensure it doesn't overflow ── */
+  .cta-hero {
+    padding: 16px 36px;
+    width: 100%;
+    max-width: 340px;
+    display: block;
+    text-align: center;
+  }
+
+  /* ── Hero time — tighten letter spacing to reduce wrapping ── */
+  .hero-time { font-size: 7px; letter-spacing: .1em; }
+
+  /* ── Pain section ── */
+  .pain-then { font-size: clamp(16px, 5vw, 22px); }
+
+  /* ── Foundation mandala section ── */
+  .mandala-rings-wrap {
+    gap: 2rem !important;
+    padding: 0 1.25rem !important;
+    margin-top: 2.5rem !important;
+  }
+  .mring-labels {
+    min-width: unset !important;
+    max-width: unset !important;
+    width: 100%;
+  }
+
+  /* ── Flow section ── */
+  .flow-diagram {
+    padding: 0 1.25rem !important;
+    gap: 2rem !important;
+    margin-top: 2.5rem !important;
+  }
+  /* Tighten arrow widths so chain fits without wrapping off-screen */
+  .flow-arrow { width: clamp(18px, 4vw, 32px) !important; }
+
+  /* ── Avatar section ── */
+  .avatar-section { padding: 4rem 1.5rem 3rem; }
+
+  /* ── Final CTA ── */
+  .final-wrap { padding: 6rem 1.5rem 5rem; }
+  .final-sub { margin-bottom: 2rem; }
+
+  /* ── Steps: already 2-col at 640px — ensure text doesn't feel cramped ── */
+  .step-card { padding: 1.5rem 1.2rem; }
+
+  /* ── Daily use grid: 2-col already at 640px — tighten card padding ── */
+  .daily-card { padding: 1.2rem 1rem; }
+
+  /* ── What you get cards ── */
+  .get-card { padding: 1.5rem 1.4rem; }
+
+  /* ── Threshold glow: scale down for smaller viewport ── */
+  .threshold-glow { width: 100%; }
+
+  /* ── Kigo: less vertical breathing room ── */
+  .kigo { padding: 0.8rem 2rem; }
+}

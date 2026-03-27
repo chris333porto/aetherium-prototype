@@ -74,11 +74,13 @@ export default function LandingPage() {
       </nav>
 
       {/* ══ 1. ARRIVAL — Hero ════════════════════════ */}
+      {/* backgroundAttachment: 'fixed' is omitted — iOS Safari doesn't support it
+          and renders a blurred/zoomed version. Desktop parallax is re-added via CSS
+          media query (@media min-width 769px). */}
       <section className="hp-hero" style={{
         backgroundImage: "url('/Aetherium Temple v3.33.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center 50%',
-        backgroundAttachment: 'fixed',
       }}>
         <div className="hero-overlay" />
 
@@ -160,7 +162,7 @@ export default function LandingPage() {
           role="presentation"
           style={{
             width: '100%',
-            height: 'clamp(420px, 54vw, 820px)',
+            height: 'clamp(220px, 54vw, 820px)',
             objectFit: 'cover',
             objectPosition: 'center center',
             display: 'block',
@@ -225,7 +227,7 @@ export default function LandingPage() {
           role="presentation"
           style={{
             width: '100%',
-            height: 'clamp(420px, 54vw, 820px)',
+            height: 'clamp(220px, 54vw, 820px)',
             objectFit: 'cover',
             objectPosition: 'center center',
             display: 'block',
@@ -310,7 +312,7 @@ export default function LandingPage() {
           role="presentation"
           style={{
             width: '100%',
-            height: 'clamp(420px, 54vw, 820px)',
+            height: 'clamp(220px, 54vw, 820px)',
             objectFit: 'cover',
             objectPosition: 'center center',
             display: 'block',
