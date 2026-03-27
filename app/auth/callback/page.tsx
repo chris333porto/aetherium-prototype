@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter, useSearchParams }  from 'next/navigation'
+import { useRouter }                   from 'next/navigation'
 import { supabase }                    from '@/lib/supabase'
 import { linkUserToProfile }           from '@/lib/persistence/profiles'
 
@@ -27,9 +27,8 @@ const PHASE_LABEL: Record<Phase, string> = {
 }
 
 export default function AuthCallbackPage() {
-  const router       = useRouter()
-  const searchParams = useSearchParams()
-  const handled      = useRef(false)
+  const router  = useRouter()
+  const handled = useRef(false)
 
   const [phase,    setPhase]    = useState<Phase>('verifying')
   const [errorMsg, setErrorMsg] = useState('')
@@ -80,7 +79,12 @@ export default function AuthCallbackPage() {
     // With Next.js App Router the onAuthStateChange event fires before the
     // useEffect listener is registered (initialization race), so we exchange
     // the code explicitly rather than waiting for the event.
-    const code = searchParams.get('code')
+    //
+    // useSearchParams() is intentionally NOT used here — it requires a Suspense
+    // boundary and causes Vercel build failures on this route.  Reading from
+    // window.location.search inside useEffect is safe: this component is
+    // 'use client' and the effect only runs in the browser.
+    const code = new URLSearchParams(window.location.search).get('code')
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
         if (error) {
@@ -126,7 +130,7 @@ export default function AuthCallbackPage() {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [router, searchParams])
+  }, [router])
 
   // ── UI ────────────────────────────────────────────────────────────────────
 
