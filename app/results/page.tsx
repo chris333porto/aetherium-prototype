@@ -36,6 +36,7 @@ import { getDimensionInterpretation }   from '@/lib/scoring/engine'
 import { STATE_LABELS }                 from '@/lib/pathways/growth'
 import type { ResultPayload }           from '@/lib/types/results'
 import { fetchAndReconstructPayload, saveProfileRecord } from '@/lib/persistence/profiles'
+import { getRole }                                       from '@/lib/canon'
 import { PreviewNav }                   from '@/components/dev/PreviewNav'
 import {
   PREVIEW_RESULT,
@@ -863,9 +864,10 @@ export default function ResultsPage() {
   const { primary, secondary, tertiary, shadow, blendTitle }           = archetypeBlend
   const { growthEdge, evolutionPathway, practices }                    = growthProfile
 
-  const tensionText    = getTension(dominantDimension, growthEdge.dimension)
-  const dominantColor  = DIMENSION_META[dominantDimension].color
-  const edgeColor      = DIMENSION_META[growthEdge.dimension].color
+  const tensionText         = getTension(dominantDimension, growthEdge.dimension)
+  const dominantColor       = DIMENSION_META[dominantDimension].color
+  const edgeColor           = DIMENSION_META[growthEdge.dimension].color
+  const primaryCanonRole    = getRole(primary.archetype.canonicalRoleId)
 
   const W = 900
 
@@ -908,9 +910,32 @@ export default function ResultsPage() {
           {blendTitle}
         </h1>
 
-        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(17px, 2.2vw, 22px)', fontStyle: 'italic', color: `${dominantColor}b0`, marginBottom: '3.5rem', lineHeight: 1.45 }}>
+        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(17px, 2.2vw, 22px)', fontStyle: 'italic', color: `${dominantColor}b0`, marginBottom: '2rem', lineHeight: 1.45 }}>
           {primary.archetype.tagline}
         </p>
+
+        {/* Operating Role (canon) */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: '3.5rem' }}>
+          <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.42em', textTransform: 'uppercase', color: 'rgba(234,232,242,0.22)', flexShrink: 0 }}>
+            Operating Role
+          </span>
+          <div style={{ width: 16, height: 1, background: 'rgba(234,232,242,0.07)', flexShrink: 0, alignSelf: 'center' }} />
+          <span style={{
+            fontFamily:    "'Cinzel', serif",
+            fontSize:      9,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+            color:         dominantColor,
+            padding:       '3px 10px',
+            border:        `1px solid ${dominantColor}30`,
+            borderRadius:  3,
+          }}>
+            {primaryCanonRole.name}
+          </span>
+          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 14, fontStyle: 'italic', color: 'rgba(234,232,242,0.32)', lineHeight: 1.5 }}>
+            {primaryCanonRole.function}
+          </span>
+        </div>
 
         {/* Blend bars */}
         <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -1215,6 +1240,17 @@ export default function ResultsPage() {
             </p>
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, color: 'rgba(234,232,242,0.46)', lineHeight: 1.8 }}>
               {primary.archetype.shadow}
+            </p>
+          </Card>
+          <Card className="p-6">
+            <p style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.38em', textTransform: 'uppercase', color: `${dominantColor}55`, marginBottom: 16 }}>
+              Canon · Growth Edge
+            </p>
+            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, color: 'rgba(234,232,242,0.56)', lineHeight: 1.8, marginBottom: 8 }}>
+              {primaryCanonRole.growth_edge}
+            </p>
+            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 13, fontStyle: 'italic', color: 'rgba(234,232,242,0.28)', lineHeight: 1.6 }}>
+              Shadow to integrate: {primaryCanonRole.shadow}
             </p>
           </Card>
         </div>

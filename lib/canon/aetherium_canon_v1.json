@@ -1,0 +1,391 @@
+{
+  "version": "1.0",
+  "canonical_rule": "This document is the naming and meaning source of truth for Aetherium v1. If code, prompts, visuals, or UX drift from this canon, this canon wins until an intentional versioned update is made.",
+
+  "purpose": "Aetherium is a navigation system for human life. Its function is to help a person orient their Role, within their real Context, so they can move in the right Direction toward greater integration.",
+
+  "core_principle": "Be the right Role in the real Context moving in the right Direction toward greater integration.",
+
+  "core_triad": {
+    "role": {
+      "name": "Role",
+      "definition": "Who you are currently operating as. A Role is not a fixed identity. It is a mode of contribution, expression, and responsibility.",
+      "correct_language": [
+        "You are currently operating as…",
+        "Your dominant role right now is…",
+        "This situation calls for…"
+      ],
+      "avoid_language": [
+        "You are permanently…",
+        "This is your fixed type"
+      ]
+    },
+    "context": {
+      "name": "Context",
+      "definition": "The reality you are inside of. Context includes life phase, constraints, environment, timing, responsibility, instability, opportunity, and external conditions."
+    },
+    "direction": {
+      "name": "Direction",
+      "definition": "The vector of your growth and movement. Direction is not just a goal. It is the most aligned next movement toward greater integration, coherence, truth, and contribution."
+    }
+  },
+
+  "elements": [
+    {
+      "id": "fire",
+      "name": "Fire",
+      "domain": "Expression, courage, initiation, signal",
+      "emphasis": "initiation, signal, expression, and courage"
+    },
+    {
+      "id": "water",
+      "name": "Water",
+      "domain": "relationship, care, repair, emotional intelligence",
+      "emphasis": "care, regulation, belonging, and repair"
+    },
+    {
+      "id": "earth",
+      "name": "Earth",
+      "domain": "building, execution, stewardship, reliability",
+      "emphasis": "structure, execution, craft, and stewardship"
+    },
+    {
+      "id": "air",
+      "name": "Air",
+      "domain": "thought, clarity, strategy, transmission",
+      "emphasis": "thought, clarity, research, and orientation"
+    },
+    {
+      "id": "aether",
+      "name": "Aether",
+      "domain": "integration, leadership, architecture, transformation",
+      "emphasis": "integration, architecture, leadership, and transformation"
+    },
+    {
+      "id": "meta",
+      "name": "Meta",
+      "domain": "frontier and sovereignty",
+      "emphasis": "Meta roles move across domains. Explorer stretches the edge. Founder takes responsibility for creating a new whole."
+    }
+  ],
+
+  "roles": [
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "element": "fire",
+      "tagline": "acts decisively, faces resistance, protects what matters.",
+      "function": "decisive action, courage, protection.",
+      "shadow": "aggression, force, burnout.",
+      "growth_edge": "precision over intensity."
+    },
+    {
+      "id": "creator",
+      "name": "Creator",
+      "element": "fire",
+      "tagline": "brings new ideas, forms, and expressions into being.",
+      "function": "original expression and generative output.",
+      "shadow": "scattering, unfinished work, avoidance of completion.",
+      "growth_edge": "structure and follow-through."
+    },
+    {
+      "id": "performer",
+      "name": "Performer",
+      "element": "fire",
+      "tagline": "channels presence, emotion, and charisma into impact.",
+      "function": "expressive presence that moves people emotionally.",
+      "shadow": "validation-seeking, image dependence.",
+      "growth_edge": "authenticity over approval."
+    },
+    {
+      "id": "storyteller",
+      "name": "Storyteller",
+      "element": "fire",
+      "tagline": "shapes narrative, meaning, and emotional signal.",
+      "function": "gives shape and meaning through narrative.",
+      "shadow": "dramatizing, spinning, over-identifying with story.",
+      "growth_edge": "truth over performance."
+    },
+    {
+      "id": "visionary",
+      "name": "Visionary",
+      "element": "fire",
+      "tagline": "sees what could be and casts possibility forward.",
+      "function": "sees future possibility and inspiring direction.",
+      "shadow": "fantasy, abstraction, lack of grounding.",
+      "growth_edge": "translate vision into steps."
+    },
+    {
+      "id": "igniter",
+      "name": "Igniter",
+      "element": "fire",
+      "tagline": "sparks energy, momentum, and activation in others.",
+      "function": "sparks momentum and energizes systems.",
+      "shadow": "chaos, over-stimulation, starting without sustaining.",
+      "growth_edge": "pacing and responsibility."
+    },
+
+    {
+      "id": "healer",
+      "name": "Healer",
+      "element": "water",
+      "tagline": "restores balance, repairs pain, supports recovery.",
+      "function": "restores balance and tends pain.",
+      "shadow": "over-giving, depletion, savior patterns.",
+      "growth_edge": "boundaries and self-restoration."
+    },
+    {
+      "id": "guide",
+      "name": "Guide",
+      "element": "water",
+      "tagline": "helps others move through uncertainty and transition.",
+      "function": "accompanies others through transition.",
+      "shadow": "carrying too much, over-identifying with another's path.",
+      "growth_edge": "support without over-control."
+    },
+    {
+      "id": "mediator",
+      "name": "Mediator",
+      "element": "water",
+      "tagline": "resolves tension, creates understanding, restores trust.",
+      "function": "resolves conflict and increases understanding.",
+      "shadow": "appeasement, false harmony, avoidance of truth.",
+      "growth_edge": "courage inside diplomacy."
+    },
+    {
+      "id": "partner",
+      "name": "Partner",
+      "element": "water",
+      "tagline": "builds mutuality, loyalty, and aligned collaboration.",
+      "function": "mutual support, loyalty, and shared movement.",
+      "shadow": "dependency, over-accommodation.",
+      "growth_edge": "interdependence with self-respect."
+    },
+    {
+      "id": "advocate",
+      "name": "Advocate",
+      "element": "water",
+      "tagline": "stands for people, truth, and what needs protection.",
+      "function": "speaks up for people, principles, and protection.",
+      "shadow": "moral intensity without listening.",
+      "growth_edge": "conviction with nuance."
+    },
+    {
+      "id": "anchor",
+      "name": "Anchor",
+      "element": "water",
+      "tagline": "provides steadiness, calm, and emotional grounding.",
+      "function": "stabilizes environments and people under stress.",
+      "shadow": "emotional heaviness, resistance to movement.",
+      "growth_edge": "stability without stagnation."
+    },
+
+    {
+      "id": "builder",
+      "name": "Builder",
+      "element": "earth",
+      "tagline": "turns intention into form through steady work.",
+      "function": "creates durable results and tangible progress.",
+      "shadow": "narrow focus, overwork, rigidity.",
+      "growth_edge": "reconnect execution to purpose."
+    },
+    {
+      "id": "operator",
+      "name": "Operator",
+      "element": "earth",
+      "tagline": "runs systems effectively and keeps things moving.",
+      "function": "runs systems reliably and efficiently.",
+      "shadow": "mechanical routine, disconnection from meaning.",
+      "growth_edge": "adaptability and aliveness."
+    },
+    {
+      "id": "maker",
+      "name": "Maker",
+      "element": "earth",
+      "tagline": "crafts with care, precision, and tangible skill.",
+      "function": "crafts tangible things with care and skill.",
+      "shadow": "perfectionism, slowness, isolation in process.",
+      "growth_edge": "finish and release."
+    },
+    {
+      "id": "engineer",
+      "name": "Engineer",
+      "element": "earth",
+      "tagline": "designs practical structures and functional solutions.",
+      "function": "designs practical, functional solutions.",
+      "shadow": "over-optimization, abstraction without humanity.",
+      "growth_edge": "build for life, not only logic."
+    },
+    {
+      "id": "organizer",
+      "name": "Organizer",
+      "element": "earth",
+      "tagline": "creates order, sequencing, and coordinated action.",
+      "function": "sequences complexity into usable structure.",
+      "shadow": "over-control, inflexibility, anxiety around disorder.",
+      "growth_edge": "allow emergence where needed."
+    },
+    {
+      "id": "steward",
+      "name": "Steward",
+      "element": "earth",
+      "tagline": "tends resources, maintains systems, protects continuity.",
+      "function": "protects and tends resources over time.",
+      "shadow": "conservatism, over-protection, resistance to evolution.",
+      "growth_edge": "preserve what matters while allowing change."
+    },
+
+    {
+      "id": "strategist",
+      "name": "Strategist",
+      "element": "air",
+      "tagline": "sees patterns, positions well, plans for leverage.",
+      "function": "positions for long-term advantage.",
+      "shadow": "overthinking, endless planning, low embodiment.",
+      "growth_edge": "decisive execution."
+    },
+    {
+      "id": "analyst",
+      "name": "Analyst",
+      "element": "air",
+      "tagline": "examines complexity, detects signal, refines understanding.",
+      "function": "identifies signal, logic, and pattern.",
+      "shadow": "paralysis, detachment, over-reduction.",
+      "growth_edge": "move before certainty is total."
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "element": "air",
+      "tagline": "investigates deeply and pursues grounded truth.",
+      "function": "investigates deeply and grounds insight in evidence.",
+      "shadow": "endless information gathering.",
+      "growth_edge": "translate learning into application."
+    },
+    {
+      "id": "teacher",
+      "name": "Teacher",
+      "element": "air",
+      "tagline": "transmits knowledge and makes understanding usable.",
+      "function": "makes knowledge transferable and useful.",
+      "shadow": "preaching, over-explaining, disembodiment.",
+      "growth_edge": "teach from lived integration."
+    },
+    {
+      "id": "advisor",
+      "name": "Advisor",
+      "element": "air",
+      "tagline": "offers perspective, judgment, and guidance.",
+      "function": "offers perspective, wisdom, and calibration.",
+      "shadow": "staying outside the game, over-detachment.",
+      "growth_edge": "remain connected to lived consequence."
+    },
+    {
+      "id": "navigator",
+      "name": "Navigator",
+      "element": "air",
+      "tagline": "orients through complexity and finds the way forward.",
+      "function": "orients through changing terrain and complexity.",
+      "shadow": "perpetual scanning without commitment.",
+      "growth_edge": "choose a heading and move."
+    },
+
+    {
+      "id": "leader",
+      "name": "Leader",
+      "element": "aether",
+      "tagline": "directs energy, responsibility, and collective movement.",
+      "function": "directs collective energy toward a meaningful end.",
+      "shadow": "domination, over-control, ego attachment.",
+      "growth_edge": "trust and emotional attunement."
+    },
+    {
+      "id": "orchestrator",
+      "name": "Orchestrator",
+      "element": "aether",
+      "tagline": "coordinates people, systems, and moving parts into coherence.",
+      "function": "brings many moving parts into coherence.",
+      "shadow": "over-holding, overwhelm, inability to delegate.",
+      "growth_edge": "simplify and trust the system."
+    },
+    {
+      "id": "architect",
+      "name": "Architect",
+      "element": "aether",
+      "tagline": "designs the larger structure within which other roles operate.",
+      "function": "designs systems, structures, and worlds.",
+      "shadow": "rigidity, abstraction, distance from implementation.",
+      "growth_edge": "build with feedback from reality."
+    },
+    {
+      "id": "connector",
+      "name": "Connector",
+      "element": "aether",
+      "tagline": "links people, ideas, and domains into new coherence.",
+      "function": "links people, ideas, and opportunities.",
+      "shadow": "surface-level networking, diffuse commitments.",
+      "growth_edge": "depth and discernment."
+    },
+    {
+      "id": "catalyst",
+      "name": "Catalyst",
+      "element": "aether",
+      "tagline": "accelerates transformation and shifts stagnant systems.",
+      "function": "accelerates deep change.",
+      "shadow": "destabilizing without support, intensity without form.",
+      "growth_edge": "transformation with care and structure."
+    },
+    {
+      "id": "alchemist",
+      "name": "Alchemist",
+      "element": "aether",
+      "tagline": "transforms raw experience into wisdom, value, and higher integration.",
+      "function": "transforms raw material into higher-order value.",
+      "shadow": "symbolism without embodiment, bypassing reality.",
+      "growth_edge": "integrate transformation into daily life."
+    },
+
+    {
+      "id": "explorer",
+      "name": "Explorer",
+      "element": "meta",
+      "tagline": "enters the unknown, tests edges, and expands what is possible.",
+      "function": "enters the unknown and expands the frontier.",
+      "shadow": "drifting, novelty addiction, lack of anchoring.",
+      "growth_edge": "exploration with commitment."
+    },
+    {
+      "id": "founder",
+      "name": "Founder",
+      "element": "meta",
+      "tagline": "brings a world, mission, or system into existence through ownership and initiation.",
+      "function": "initiates and takes ownership of a mission or system.",
+      "shadow": "over-identification, isolation, pressure collapse.",
+      "growth_edge": "build with support, not through self-exhaustion."
+    }
+  ],
+
+  "language": {
+    "correct": [
+      "Your dominant role right now is…",
+      "You are currently operating as…",
+      "This situation may call for…",
+      "Your growth edge may involve stepping more fully into…",
+      "I've been operating as a Builder lately.",
+      "This project needs Strategist energy.",
+      "I'm stepping into a Guide role right now."
+    ],
+    "incorrect": [
+      "You are permanently…",
+      "This is your fixed type…",
+      "You will always be…"
+    ]
+  },
+
+  "overlap_risks": [
+    ["Guide", "Teacher", "Advisor"],
+    ["Builder", "Maker", "Engineer", "Operator"],
+    ["Leader", "Orchestrator", "Architect", "Founder"],
+    ["Visionary", "Creator", "Storyteller"]
+  ]
+}

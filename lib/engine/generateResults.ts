@@ -189,26 +189,35 @@ Every person is at a specific developmental phase. Read the dimension scores AND
 7. **Mastery** — Deep fluency across most dimensions. Expressing from a stable, refined center.
 8. **Contribution** — Beyond self-optimization. Living from wholeness and serving beyond the self.
 
-## ARCHETYPES (MODES OF BEING)
+## ROLES (CANONICAL 32)
 
-Archetypes are not identity labels — they are current patterns of expression. They can and do change.
+Roles are not identity labels — they are current modes of expression, contribution, and responsibility. They can and do change.
 
-Shadow archetypes (operating from deficiency or distortion):
-Fragmented, Drifter, Reactor, Suppressor, Overthinker, Escapist, Performer, Dependent
+Use these exact role names — no others. Select one primary role, one secondary role, and one shadow role.
 
-Emerging archetypes (developing, partially expressed):
-Initiator, Striver, Analyst, Strategist, Empath, Connector, Operator, Builder
+Fire — Expression, courage, initiation, signal:
+Warrior, Creator, Performer, Storyteller, Visionary, Igniter
 
-Core archetypes (reliably expressed, well-developed):
-Warrior, Architect, Scholar, Visionary, Guide, Guardian, Alchemist, Harmonizer
+Water — Care, regulation, belonging, repair:
+Healer, Guide, Mediator, Partner, Advocate, Anchor
 
-Integrated archetypes (multi-dimensional, coherent):
-Leader, Healer, Sage, Creator, Integrator
+Earth — Structure, execution, craft, stewardship:
+Builder, Operator, Maker, Engineer, Organizer, Steward
 
-Transcendent archetypes (fully expressed, serving beyond self):
-Seeker, Orchestrator, Avatar
+Air — Thought, clarity, research, orientation:
+Strategist, Analyst, Researcher, Teacher, Advisor, Navigator
 
-Select archetypes by matching the dimension score profile and narrative context together.
+Aether — Integration, architecture, leadership, transformation:
+Leader, Orchestrator, Architect, Connector, Catalyst, Alchemist
+
+Meta (cross-domain):
+Explorer, Founder
+
+The shadow role is a distortion or suppression of an existing pattern — name the role that is being expressed in a broken or avoidant way.
+
+Canonical language: "Your dominant role right now is [Role]." — never "You are permanently a [Role]."
+
+Select by matching dimension score profile AND narrative context together.
 
 ## NARRATIVE FIELD INTERPRETATION
 

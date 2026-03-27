@@ -333,6 +333,37 @@ export async function saveProfileRecord(params: {
   return { profileId }
 }
 
+// ── Identity stitching (post sign-in) ────────────────────────────────────────
+
+/**
+ * Called on every successful sign-in.
+ *
+ * Finds the `profiles` row whose email matches the authenticated user and
+ * claims it by setting `user_id` if it is still null.  Idempotent — safe
+ * to call on every sign-in regardless of whether the link already exists.
+ *
+ * Returns the profiles.id if a matching row exists, null otherwise
+ * (the user is authenticated but has not yet saved a profile).
+ */
+export async function linkUserToProfile(
+  userId: string,
+  email:  string,
+): Promise<string | null> {
+  // Update the row only when user_id is null (first claim) or already this user
+  // (re-linking after e.g. an account re-creation).  Any row owned by a
+  // *different* user_id is left untouched — the filter simply matches 0 rows.
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ user_id: userId })
+    .eq('email', email)
+    .or(`user_id.is.null,user_id.eq.${userId}`)
+    .select('id')
+    .single()
+
+  if (error || !data) return null
+  return (data as { id: string }).id
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildArchetypeDistEntry(id: string, name: string, percentage: number) {

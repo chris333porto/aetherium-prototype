@@ -1,5 +1,6 @@
 import type { EvolutionState } from '../scoring/engine'
 import type { Dimension } from '../assessment/questions'
+import type { RoleId } from '../types/canon'
 
 export interface ArchetypeProfile {
   // Representative ideal scores [0-100] for [aether, fire, air, water, earth]
@@ -21,6 +22,14 @@ export interface Archetype {
   description: string
   expression: string
   shadow: string
+  /**
+   * Maps this score-derived archetype to its canonical role from Aetherium Canon v1.
+   * Use this to surface canon-consistent language in product copy and AI prompts:
+   *   import { getRole } from '@/lib/canon'
+   *   const role = getRole(archetype.canonicalRoleId)
+   *   // "Your dominant role right now is [role.name]."
+   */
+  canonicalRoleId: RoleId
 }
 
 export const ARCHETYPES: Archetype[] = [
@@ -36,6 +45,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Scattered across many paths, yet committed to none. Living reactively in the space between choices.',
     expression: 'Perpetual starting-over. Difficulty sustaining anything. A sense of floating rather than being.',
     shadow: 'Avoidance disguised as freedom.',
+    canonicalRoleId: 'explorer',   // exploration without commitment = Explorer's shadow form
   },
   {
     id: 'the-ghost',
@@ -48,6 +58,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Sensitive to meaning and depth, yet unable to act on what is perceived. Vision without incarnation.',
     expression: 'Rich inner life, minimal outer movement. Others sense depth but rarely witness it in action.',
     shadow: 'Using spirituality or insight as a reason not to engage with life.',
+    canonicalRoleId: 'visionary',  // vision without incarnation = Visionary's shadow form
   },
   {
     id: 'the-reactor',
@@ -60,6 +71,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Emotionally volatile and impulsive. High feeling and high drive that cancel each other out without clarity.',
     expression: 'Intense, unpredictable, passionate. Can move mountains and then disappear. Others feel the heat.',
     shadow: 'Mistaking intensity for depth.',
+    canonicalRoleId: 'warrior',    // force without direction = Warrior's shadow form
   },
   {
     id: 'the-recluse',
@@ -72,6 +84,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Brilliant in analysis but withdrawn from life. The mind as refuge. Knows much, experiences little.',
     expression: 'Precise, observant, private. Struggles to translate thought into feeling, action, or connection.',
     shadow: 'Intelligence used to stay safe from the risk of living.',
+    canonicalRoleId: 'analyst',    // analysis as refuge = Analyst's shadow form
   },
   {
     id: 'the-soldier',
@@ -84,6 +97,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Capable of execution, but serving an unclear or inherited cause. Power without self-direction.',
     expression: 'Reliable, hard-working, capable. Often in service to structures they did not choose for themselves.',
     shadow: 'Confusing obedience with virtue.',
+    canonicalRoleId: 'operator',   // execution without purpose = Operator's shadow form
   },
 
   // ── EMERGING ──────────────────────────────────────────────────────────────
@@ -98,6 +112,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Beginning to find their purpose. Drawn toward depth, meaning, and becoming — but not yet grounded in action.',
     expression: 'Curious, restless, questioning. Reads, travels, explores. Has not yet committed fully to a path.',
     shadow: 'Endless seeking as a way to postpone arriving.',
+    canonicalRoleId: 'explorer',
   },
   {
     id: 'the-builder',
@@ -110,6 +125,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Capable and driven, constructing real things in the world. The vision that would give it meaning has not yet fully arrived.',
     expression: 'Productive, dependable, concrete. Works hard and shows results. Asks "what?" more than "why?"',
     shadow: 'Busyness as a substitute for meaning.',
+    canonicalRoleId: 'builder',
   },
   {
     id: 'the-empath',
@@ -122,6 +138,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Deeply sensitive, compassionate, and attuned to others. Still learning to hold their own boundaries while remaining open.',
     expression: 'Warm, perceptive, other-focused. May absorb too much. Gives abundantly but struggles to receive or act on their own needs.',
     shadow: 'Compassion as an avoidance of self.',
+    canonicalRoleId: 'healer',
   },
   {
     id: 'the-analyst',
@@ -134,6 +151,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Intellectually acute, beginning to recognize that cognition alone is incomplete. The emotional and physical dimensions are opening.',
     expression: 'Systematic, precise, questioning. Highly competent in conceptual domains. Relationships and embodiment are frontier terrain.',
     shadow: 'Analyzing feeling as a substitute for having it.',
+    canonicalRoleId: 'analyst',
   },
   {
     id: 'the-warrior',
@@ -146,6 +164,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Disciplined, relentless, and embodied. Beginning to question who and what they are fighting for.',
     expression: 'Intense, direct, capable. Gets things done. The integration of wisdom and emotion is the next horizon.',
     shadow: 'Mistaking willpower for wisdom.',
+    canonicalRoleId: 'warrior',
   },
   {
     id: 'the-dreamer',
@@ -158,6 +177,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Visionary, inspired, and imaginative — struggling to land the vision in material reality. Lives more in possibility than in presence.',
     expression: 'Idealistic, creative, future-oriented. Beautiful ideas, inconsistent follow-through. Others are moved by what could be.',
     shadow: 'Living in the future to escape the present.',
+    canonicalRoleId: 'visionary',
   },
   {
     id: 'the-helper',
@@ -170,6 +190,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Devoted to others and capable of grounded support. Beginning to understand that their own path and desires deserve attention.',
     expression: 'Reliable, warm, practical. Known for what they give. The emergence of personal direction is the growing edge.',
     shadow: 'Serving others to avoid being seen.',
+    canonicalRoleId: 'guide',
   },
 
   // ── INTEGRATED ────────────────────────────────────────────────────────────
@@ -184,6 +205,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Deep thinker with emotional intelligence and clear purpose. Integrates meaning, mind, and feeling. Action in the world is the remaining frontier.',
     expression: 'Reflective, nuanced, capable of holding complexity. Others seek their counsel. Rarely rushes toward conclusions.',
     shadow: 'Knowing the right path and not walking it.',
+    canonicalRoleId: 'advisor',
   },
   {
     id: 'the-guardian',
@@ -196,6 +218,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Protective, reliable, and emotionally present. Holds space for others while grounded in consistent action. Still developing their own vision.',
     expression: 'Calm under pressure, emotionally attuned, physically present. Others feel safe around them.',
     shadow: 'Caring for everyone except themselves.',
+    canonicalRoleId: 'anchor',
   },
   {
     id: 'the-catalyst',
@@ -208,6 +231,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Drives change with intention and strategic clarity. Moves fast, thinks well, and acts with purpose. Emotional depth is the growing edge.',
     expression: 'Energized, decisive, forward-moving. Initiates things others won\'t. Can move past feelings in pursuit of the goal.',
     shadow: 'Speed used to avoid depth.',
+    canonicalRoleId: 'catalyst',
   },
   {
     id: 'the-connector',
@@ -220,6 +244,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Masterful with relationships and guided by clear values. Emotionally intelligent and purposeful. Developing the capacity to execute and ground.',
     expression: 'Warm, perceptive, principled. Builds communities and trust. Others feel understood in their presence.',
     shadow: 'Prioritizing harmony over necessary confrontation.',
+    canonicalRoleId: 'connector',
   },
   {
     id: 'the-craftsman',
@@ -232,6 +257,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Skilled at building with care and detail. Integrates thinking and doing with consistency. Developing purpose and emotional intelligence.',
     expression: 'Methodical, skilled, results-oriented. Known for quality. Takes pride in the work itself.',
     shadow: 'Perfecting craft as an avoidance of meaning.',
+    canonicalRoleId: 'maker',
   },
   {
     id: 'the-leader',
@@ -244,6 +270,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Motivated, grounded, and purposeful. Moves people and projects forward. Deepening wisdom and empathy is the path ahead.',
     expression: 'Decisive, visible, effective. Creates momentum. Others look to them when direction is needed.',
     shadow: 'Leading from position rather than from being.',
+    canonicalRoleId: 'leader',
   },
   {
     id: 'the-healer',
@@ -256,6 +283,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Compassionate, grounded, and purposeful. Holds space for transformation in others. Developing activation and sharper discernment.',
     expression: 'Gentle, stable, attuned. Others are drawn to heal in their presence. Rarely asks for help themselves.',
     shadow: 'Healing others to avoid one\'s own wounds.',
+    canonicalRoleId: 'healer',
   },
   {
     id: 'the-creator',
@@ -268,6 +296,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Inspired, driven, and clear-minded. Generates ideas and brings them to form. Learning to ground and feel more deeply.',
     expression: 'Original, energized, generative. Produces work that others find meaningful. Can burn bright and short.',
     shadow: 'Creating to be seen rather than to express truth.',
+    canonicalRoleId: 'creator',
   },
 
   // ── ADVANCED ──────────────────────────────────────────────────────────────
@@ -282,6 +311,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Sees far, feels deeply, thinks clearly, and acts boldly. Grounding the vision in sustained reality is the final integration.',
     expression: 'Compelling, future-oriented, synthesizing. Articulates possibilities that shift how others see. Embodied presence is the growing edge.',
     shadow: 'Vision as a way to live above ordinary life.',
+    canonicalRoleId: 'visionary',
   },
   {
     id: 'the-sage',
@@ -294,6 +324,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Wisdom crystallized into insight. Integrates knowing, feeling, and purpose. Speaks rarely but precisely. Creates clarity in others.',
     expression: 'Measured, deep, unshakeable. Trusted by those who value truth over comfort. Their presence changes the quality of a room.',
     shadow: 'Withholding wisdom out of detachment or pride.',
+    canonicalRoleId: 'advisor',
   },
   {
     id: 'the-architect',
@@ -306,6 +337,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Master builder of structures that endure. Merges intelligence, execution, and purpose. Developing emotional mastery.',
     expression: 'Strategic, disciplined, far-thinking. Builds things designed to last. Others trust their blueprints.',
     shadow: 'Using structure to avoid intimacy and vulnerability.',
+    canonicalRoleId: 'architect',
   },
   {
     id: 'the-oracle',
@@ -318,6 +350,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Pierces the surface of things with intuition and knowing. Deep insight into people, systems, and timing. Developing grounded action.',
     expression: 'Perceptive, precise, often unsettling in their clarity. Knows before understanding why. Developing the will to act on what is seen.',
     shadow: 'Seeing clearly and refusing to act.',
+    canonicalRoleId: 'researcher',  // investigates deeply, grounds insight in evidence
   },
   {
     id: 'the-warrior-sage',
@@ -330,6 +363,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Combines the force of the warrior with the clarity of the sage. Purpose-driven, disciplined, and intelligent. Emotional mastery is the frontier.',
     expression: 'Formidable, precise, principled. Acts without hesitation when the moment is clear. Commands respect without demanding it.',
     shadow: 'Cutting away feeling in the name of clarity.',
+    canonicalRoleId: 'strategist',  // sees patterns, positions well, force + clarity
   },
   {
     id: 'the-alchemist',
@@ -342,6 +376,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Transforms everything they touch — ideas, people, situations. High across all dimensions, integrating and transmuting.',
     expression: 'Uncommon. Leaves things fundamentally different than they found them. Their presence catalyzes change in others.',
     shadow: 'Compulsive transformation as avoidance of acceptance.',
+    canonicalRoleId: 'alchemist',
   },
 
   // ── UNIFIED ───────────────────────────────────────────────────────────────
@@ -356,6 +391,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Embodies authority through wholeness. Power is held not through force but through integration. Acts from complete self-possession.',
     expression: 'Rare authority. Not performed — lived. Others feel both the gravity and the freedom in their presence.',
     shadow: 'The residue of ego dressed as wisdom.',
+    canonicalRoleId: 'leader',     // authority through wholeness; highest expression of Leader
   },
   {
     id: 'the-mystic',
@@ -368,6 +404,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Lives at the intersection of the visible and invisible. Unified in being rather than doing. Presence is the offering.',
     expression: 'Still, vast, attuned. The ordinary becomes extraordinary in their company. Does not explain what they know — they inhabit it.',
     shadow: 'Transcendence used to avoid the mess of incarnation.',
+    canonicalRoleId: 'alchemist',  // transforms raw experience into higher-order value
   },
   {
     id: 'the-master',
@@ -380,6 +417,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Complete mastery of self across all dimensions. Excellence flows naturally — not as performance but as expression.',
     expression: 'Rare and unmistakable. What they do and who they are is one thing. Mastery shows in the quality of attention.',
     shadow: 'The illusion that there is nothing left to learn.',
+    canonicalRoleId: 'orchestrator', // brings many moving parts into coherence; highest expression
   },
   {
     id: 'the-beacon',
@@ -392,6 +430,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Illuminated purpose expressed through action and deep connection. Lights the way for others simply by walking their own.',
     expression: 'Radiant without trying. Inspires without performing. Others feel called toward their own truth in proximity to them.',
     shadow: 'The burden of being a light others depend on.',
+    canonicalRoleId: 'catalyst',   // accelerates transformation in others
   },
   {
     id: 'the-weaver',
@@ -404,6 +443,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Integrates all disparate parts into a coherent whole. Holds paradox without collapse. Brings together what others cannot reconcile.',
     expression: 'Integrating, bridging, holding. Others feel met, not just heard. Creates coherence in complex systems.',
     shadow: 'Taking responsibility for others\' integration at the expense of rest.',
+    canonicalRoleId: 'connector',  // links people, ideas, and domains into new coherence
   },
   {
     id: 'the-pilgrim',
@@ -416,6 +456,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Perfect alignment with one\'s path. Neither arriving nor departing — simply walking. The deepest expression of Aether.',
     expression: 'Unhurried, unattached, fully present. Their path is unmistakably their own. Equanimity is not a practice — it is their nature.',
     shadow: 'Detachment mistaken for freedom.',
+    canonicalRoleId: 'explorer',   // enters the unknown; the journey has become its own destination
   },
 ]
 

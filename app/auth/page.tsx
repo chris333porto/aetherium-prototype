@@ -18,7 +18,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/onboarding/welcome',
+        redirectTo: window.location.origin + '/auth/callback',
         scopes: 'email profile',
       },
     })
@@ -36,7 +36,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmed,
       options: {
-        emailRedirectTo: window.location.origin + '/onboarding/welcome',
+        emailRedirectTo: window.location.origin + '/auth/callback',
         shouldCreateUser: true,
       },
     })
