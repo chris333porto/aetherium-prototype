@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter }                   from 'next/navigation'
+import { useRouter, useSearchParams }  from 'next/navigation'
 import { supabase }                    from '@/lib/supabase'
 import { linkUserToProfile }           from '@/lib/persistence/profiles'
 
@@ -27,8 +27,9 @@ const PHASE_LABEL: Record<Phase, string> = {
 }
 
 export default function AuthCallbackPage() {
-  const router   = useRouter()
-  const handled  = useRef(false)
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const handled      = useRef(false)
 
   const [phase,    setPhase]    = useState<Phase>('verifying')
   const [errorMsg, setErrorMsg] = useState('')
@@ -74,14 +75,36 @@ export default function AuthCallbackPage() {
       }
     }
 
-    // ── Strategy 1: session already set (page refresh, OAuth redirect) ──────
+    // ── Strategy 1 (primary): PKCE code exchange — Google OAuth lands here ──
+    // After Google auth, Supabase appends ?code=XXX to the redirectTo URL.
+    // With Next.js App Router the onAuthStateChange event fires before the
+    // useEffect listener is registered (initialization race), so we exchange
+    // the code explicitly rather than waiting for the event.
+    const code = searchParams.get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error) {
+          console.error('[Aetherium] PKCE code exchange failed:', error.message)
+          // Fall through — strategy 2/3 will pick up if there's still a session
+          return
+        }
+        if (data.session?.user?.email) {
+          proceed(data.session.user.id, data.session.user.email)
+        }
+      })
+    }
+
+    // ── Strategy 2: session already set (page refresh, already-signed-in) ───
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email) {
         proceed(session.user.id, session.user.email)
       }
     })
 
-    // ── Strategy 2: wait for SIGNED_IN event (magic-link first click) ───────
+    // ── Strategy 3: SIGNED_IN event — magic-link first click ────────────────
+    // Magic links land with a hash fragment (#access_token=...) which the
+    // Supabase client converts to a session; the SIGNED_IN event fires after
+    // our listener is registered because hash processing is async.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_IN' && session?.user?.email) {
@@ -103,7 +126,7 @@ export default function AuthCallbackPage() {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [router])
+  }, [router, searchParams])
 
   // ── UI ────────────────────────────────────────────────────────────────────
 

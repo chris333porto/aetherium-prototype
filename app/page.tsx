@@ -7,6 +7,7 @@ import { HomepageBgCanvas } from '@/components/HomepageBgCanvas'
 import { ScrollReveal } from '@/components/ScrollReveal'
 import { DimensionMandala } from '@/components/DimensionMandala'
 import { DEMO_SCORES } from '@/lib/assessment/stateEngine'
+import { supabase } from '@/lib/supabase'
 
 const DIMENSIONS = [
   { name: 'Intention',  desc: 'What you want and why',              color: '#9590ec', angle: -90 },
@@ -38,12 +39,25 @@ const SHOWCASE_ARCHETYPES = [
 
 export default function LandingPage() {
   const navRef = useRef<HTMLElement>(null)
-  const [scrolled, setScrolled] = useState(false)
+  const [scrolled,  setScrolled]  = useState(false)
+  const [authed,    setAuthed]    = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Check auth state — if already signed in, nav button becomes "Dashboard"
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session?.user)
+    })
+    // Keep in sync if the user signs out in another tab
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => setAuthed(!!session?.user)
+    )
+    return () => subscription.unsubscribe()
   }, [])
 
   return (
@@ -54,7 +68,9 @@ export default function LandingPage() {
       {/* ── Nav ─────────────────────────────────────── */}
       <nav ref={navRef} className={`hp-nav${scrolled ? ' scrolled' : ''}`}>
         <div className="hp-nav-logo">AETHERIUM</div>
-        <Link href="/auth" className="hp-nav-btn">Sign in</Link>
+        <Link href={authed ? '/dashboard' : '/auth'} className="hp-nav-btn">
+          {authed ? 'Dashboard' : 'Sign in'}
+        </Link>
       </nav>
 
       {/* ══ 1. ARRIVAL — Hero ════════════════════════ */}

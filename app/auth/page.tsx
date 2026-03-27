@@ -1,16 +1,28 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { useRouter }            from 'next/navigation'
+import Link                     from 'next/link'
+import { supabase }             from '@/lib/supabase'
 
 export default function AuthPage() {
+  const router = useRouter()
+
   const [email, setEmail]     = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent]       = useState(false)
   const [sentTo, setSentTo]   = useState('')
   const [googleBusy, setGoogleBusy] = useState(false)
   const [error, setError]     = useState('')
+
+  // ── Session guard: already signed in → go straight to dashboard ───────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        router.replace('/dashboard')
+      }
+    })
+  }, [router])
 
   async function handleGoogle() {
     setError('')
