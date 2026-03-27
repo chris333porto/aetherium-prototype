@@ -289,12 +289,15 @@ export async function saveProfileRecord(params: {
 }): Promise<{ profileId: string }> {
   const { identity, assessmentId, profileStateId } = params
 
+  // Normalize email so stored value always matches what auth providers return
+  const normalizedEmail = identity.email.toLowerCase().trim()
+
   // 1. Upsert profiles row — email is the unique key
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
     .upsert(
       {
-        email:      identity.email,
+        email:      normalizedEmail,
         first_name: identity.firstName,
         last_name:  identity.lastName,
         birth_date: identity.birthDate  || null,
@@ -344,24 +347,84 @@ export async function saveProfileRecord(params: {
  *
  * Returns the profiles.id if a matching row exists, null otherwise
  * (the user is authenticated but has not yet saved a profile).
+ *
+ * Normalization: emails are lowercased + trimmed before matching so that
+ * case differences between the stored email and the auth provider email
+ * never cause a false miss.
  */
 export async function linkUserToProfile(
   userId: string,
   email:  string,
 ): Promise<string | null> {
-  // Update the row only when user_id is null (first claim) or already this user
-  // (re-linking after e.g. an account re-creation).  Any row owned by a
-  // *different* user_id is left untouched — the filter simply matches 0 rows.
-  const { data, error } = await supabase
+  // Normalize — both the auth provider and the save flow may differ in case
+  const normalizedEmail = email.toLowerCase().trim()
+
+  console.log(
+    `[linkUserToProfile] auth email: "${email}" → normalized: "${normalizedEmail}" | userId: ${userId}`
+  )
+
+  // ── Step 1: find the profile row ─────────────────────────────────────────
+  // Use ilike so any pre-existing rows with non-normalized casing are still
+  // found (case-insensitive LIKE match in PostgreSQL).
+  const { data: profile, error: selectErr } = await supabase
+    .from('profiles')
+    .select('id, email, user_id')
+    .ilike('email', normalizedEmail)
+    .maybeSingle()
+
+  if (selectErr) {
+    console.error('[linkUserToProfile] SELECT error:', selectErr.message, selectErr)
+    return null
+  }
+
+  if (!profile) {
+    console.log(
+      `[linkUserToProfile] No profile found for normalized email "${normalizedEmail}" — user has not saved a profile yet`
+    )
+    return null
+  }
+
+  const p = profile as { id: string; email: string; user_id: string | null }
+
+  console.log(
+    `[linkUserToProfile] Profile found → id: ${p.id} | stored email: "${p.email}" | existing user_id: ${p.user_id ?? 'null'}`
+  )
+
+  // ── Step 2: check ownership ──────────────────────────────────────────────
+  if (p.user_id === userId) {
+    // Already correctly linked — nothing to do
+    console.log(`[linkUserToProfile] Already linked to this user — no update needed, returning ${p.id}`)
+    return p.id
+  }
+
+  if (p.user_id !== null) {
+    // Owned by a different user_id — do not overwrite; return the id so the
+    // dashboard can still load the profile data.
+    console.warn(
+      `[linkUserToProfile] Profile ${p.id} is owned by a different user_id (${p.user_id}) — skipping claim, returning id anyway`
+    )
+    return p.id
+  }
+
+  // ── Step 3: claim the unclaimed row ─────────────────────────────────────
+  const { error: updateErr } = await supabase
     .from('profiles')
     .update({ user_id: userId })
-    .eq('email', email)
-    .or(`user_id.is.null,user_id.eq.${userId}`)
-    .select('id')
-    .single()
+    .eq('id', p.id)
 
-  if (error || !data) return null
-  return (data as { id: string }).id
+  if (updateErr) {
+    console.error(
+      `[linkUserToProfile] UPDATE failed for profile ${p.id}:`,
+      updateErr.message,
+      updateErr
+    )
+    // Profile exists — return id even if the link write failed so the
+    // dashboard can still display data. The link will retry on next sign-in.
+    return p.id
+  }
+
+  console.log(`[linkUserToProfile] ✓ Linked profile ${p.id} → user ${userId}`)
+  return p.id
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
