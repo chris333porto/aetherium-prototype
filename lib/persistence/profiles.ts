@@ -122,10 +122,20 @@ export async function saveProfileState(params: {
 
       practices: growthProfile.practices,
 
-      // Narrative context
-      narrative_life_phase:  narrative.life_phase  || null,
+      // Narrative context — original 3 named columns (Supabase schema v1–v3)
+      narrative_life_phase:  narrative.life_phase        || null,
       narrative_challenges:  narrative.recent_challenges || null,
       narrative_direction:   narrative.desired_direction || null,
+
+      // Extended narrative fields (migration 003) — stored as jsonb
+      narrative_context: {
+        ...(narrative.environment       ? { environment:       narrative.environment }       : {}),
+        ...(narrative.recurring_pattern ? { recurring_pattern: narrative.recurring_pattern } : {}),
+        ...(narrative.avoidance         ? { avoidance:         narrative.avoidance }         : {}),
+        ...(narrative.deeper_pull       ? { deeper_pull:       narrative.deeper_pull }       : {}),
+        ...(narrative.energy_state      ? { energy_state:      narrative.energy_state }      : {}),
+        ...(narrative.energy_sources    ? { energy_sources:    narrative.energy_sources }    : {}),
+      },
 
       metadata: {},
     })
@@ -229,18 +239,98 @@ export async function fetchAndReconstructPayload(
   const archetypeBlend = buildArchetypeBlend(dimensions)
   const growthProfile  = buildGrowthProfile(dimensions)
 
-  // Only the 3 original fields are persisted in Supabase; the rest default to ''.
+  // Reconstruct full NarrativeAnswers from both named columns (migration 001/002)
+  // and the narrative_context jsonb blob (migration 003).
+  const ctx = (ps.narrative_context ?? {}) as Record<string, string>
+
   const narrative: NarrativeAnswers = {
     ...EMPTY_NARRATIVE,
     life_phase:        (ps.narrative_life_phase as string | null) ?? '',
     recent_challenges: (ps.narrative_challenges as string | null) ?? '',
     desired_direction: (ps.narrative_direction  as string | null) ?? '',
+    environment:       ctx.environment        ?? '',
+    recurring_pattern: ctx.recurring_pattern  ?? '',
+    avoidance:         ctx.avoidance          ?? '',
+    deeper_pull:       ctx.deeper_pull        ?? '',
+    energy_state:      ctx.energy_state       ?? '',
+    energy_sources:    ctx.energy_sources     ?? '',
   }
 
   return buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, {
     assessmentId:   (ps.assessment_id  as string | null) ?? null,
     profileStateId: ps.id as string,
   })
+}
+
+// ── Save profile record (post-results identity persistence) ───────────────────
+
+/**
+ * Called when the user taps "Save your profile and continue" on the results page.
+ *
+ * 1. Upserts a `profiles` row keyed on email (idempotent — retapping is safe).
+ * 2. Links the current `assessments` row to that profile.
+ * 3. Links the current `profile_states` row to that profile.
+ *
+ * Throws on Supabase error so the caller can surface a message.
+ */
+export async function saveProfileRecord(params: {
+  identity: {
+    email:      string
+    firstName:  string
+    lastName:   string
+    birthDate?: string | null
+    city?:      string | null
+    region?:    string | null
+    country?:   string | null
+    timezone?:  string | null
+  }
+  assessmentId:   string | null
+  profileStateId: string | null
+}): Promise<{ profileId: string }> {
+  const { identity, assessmentId, profileStateId } = params
+
+  // 1. Upsert profiles row — email is the unique key
+  const { data: profile, error: profileErr } = await supabase
+    .from('profiles')
+    .upsert(
+      {
+        email:      identity.email,
+        first_name: identity.firstName,
+        last_name:  identity.lastName,
+        birth_date: identity.birthDate  || null,
+        city:       identity.city       || null,
+        region:     identity.region     || null,
+        country:    identity.country    || null,
+        timezone:   identity.timezone   || null,
+        metadata:   {},
+      },
+      { onConflict: 'email' }
+    )
+    .select('id')
+    .single()
+
+  if (profileErr) throw profileErr
+  const profileId = (profile as { id: string }).id
+
+  // 2. Link assessments row
+  if (assessmentId) {
+    const { error: aErr } = await supabase
+      .from('assessments')
+      .update({ profile_id: profileId })
+      .eq('id', assessmentId)
+    if (aErr) throw aErr
+  }
+
+  // 3. Link profile_states row
+  if (profileStateId) {
+    const { error: psErr } = await supabase
+      .from('profile_states')
+      .update({ profile_id: profileId })
+      .eq('id', profileStateId)
+    if (psErr) throw psErr
+  }
+
+  return { profileId }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

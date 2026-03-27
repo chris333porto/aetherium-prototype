@@ -11,7 +11,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export type Assessment = {
   id:                     string
   user_id:                string | null
-  status:                 'pending' | 'completed'
+  profile_id:             string | null   // migration 003 — nullable until profile is saved
+  status:                 'pending' | 'in_progress' | 'completed' | 'abandoned'
   assessment_version:     string
   profile_model_version:  string
   prompt_version:         string
@@ -68,6 +69,13 @@ export type ProfileState = {
   narrative_life_phase:  string | null
   narrative_challenges:  string | null
   narrative_direction:   string | null
+
+  // Extended narrative fields (migration 003)
+  // Keys: environment, recurring_pattern, avoidance, deeper_pull, energy_state, energy_sources
+  narrative_context:     Record<string, string>
+
+  // Profile link (migration 003) — nullable until user saves their profile
+  profile_id:            string | null
 
   metadata: Record<string, unknown>
   // Legacy column kept for backward compat
@@ -175,10 +183,22 @@ export async function saveAssessmentLegacy(answers: Record<string, number>) {
   return assessment as Assessment
 }
 
-// Legacy type kept for compatibility
+// ── Profile ──────────────────────────────────────────────────────────────────
+// Permanent user identity record. Created when a user saves their profile
+// after completing the assessment. Migration: 003_current_alignment.sql
+
 export type Profile = {
-  id:         string
-  created_at: string
-  name:       string
-  archetype:  string
+  id:          string
+  created_at:  string
+  updated_at:  string
+  user_id:     string | null   // links to auth.users once account is created
+  email:       string
+  first_name:  string
+  last_name:   string
+  birth_date:  string | null   // ISO date string 'YYYY-MM-DD'
+  city:        string | null
+  region:      string | null
+  country:     string | null
+  timezone:    string | null
+  metadata:    Record<string, unknown>
 }

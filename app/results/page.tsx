@@ -35,7 +35,7 @@ import {
 import { getDimensionInterpretation }   from '@/lib/scoring/engine'
 import { STATE_LABELS }                 from '@/lib/pathways/growth'
 import type { ResultPayload }           from '@/lib/types/results'
-import { fetchAndReconstructPayload }   from '@/lib/persistence/profiles'
+import { fetchAndReconstructPayload, saveProfileRecord } from '@/lib/persistence/profiles'
 import { PreviewNav }                   from '@/components/dev/PreviewNav'
 import {
   PREVIEW_RESULT,
@@ -736,6 +736,56 @@ export default function ResultsPage() {
   const [history,    setHistory]   = useState<ScoreSnapshot[]>([])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // ── Save profile state ────────────────────────────────────────────────────
+  type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+
+  async function handleSaveProfile() {
+    if (saveStatus === 'saving' || saveStatus === 'saved') return
+    setSaveStatus('saving')
+
+    try {
+      // Read identity stored during /assessment/identity
+      const rawIdentity = localStorage.getItem('ae_identity')
+      if (!rawIdentity) throw new Error('No identity data found. Please complete the identity step first.')
+
+      const id = JSON.parse(rawIdentity) as {
+        firstName: string
+        lastName:  string
+        email:     string
+        birthDate: string
+        location?: { city?: string; region?: string; country?: string; timezone?: string }
+      }
+
+      // ae_assessment_id is cleared by generating/page.tsx after persistence.
+      // The canonical source is data.assessmentId (patched into the payload before
+      // localStorage write). ae_profile_state_id stays set through to this page.
+      const assessmentId   = data?.assessmentId                                            || null
+      const profileStateId = data?.profileStateId || localStorage.getItem('ae_profile_state_id') || null
+
+      await saveProfileRecord({
+        identity: {
+          email:     id.email,
+          firstName: id.firstName,
+          lastName:  id.lastName,
+          birthDate: id.birthDate  || null,
+          city:      id.location?.city     || null,
+          region:    id.location?.region   || null,
+          country:   id.location?.country  || null,
+          timezone:  id.location?.timezone || null,
+        },
+        assessmentId,
+        profileStateId,
+      })
+
+      setSaveStatus('saved')
+      setSynced(true)
+    } catch (err) {
+      console.error('[Aetherium] Save profile failed:', err)
+      setSaveStatus('error')
+    }
+  }
+
   useEffect(() => {
     const loadStart = Date.now()
 
@@ -1217,30 +1267,59 @@ export default function ResultsPage() {
             over time.
           </p>
 
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
-            <Button size="lg">
-              Save your profile and continue
-            </Button>
-            <Button variant="ghost" size="lg">
-              Not now
-            </Button>
-          </div>
+          {saveStatus === 'saved' ? (
+            <p style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize:   17,
+              color:      'rgba(45,184,133,0.75)',
+              fontStyle:  'italic',
+              letterSpacing: '0.02em',
+            }}>
+              Profile saved. Your evolution is now being tracked.
+            </p>
+          ) : (
+            <>
+              {saveStatus === 'error' && (
+                <p style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize:   13,
+                  color:      'rgba(224,90,58,0.7)',
+                  fontStyle:  'italic',
+                }}>
+                  Something went wrong. Please try again.
+                </p>
+              )}
 
-          {/* Optional phone step */}
-          <p style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize:   13,
-            color:      'rgba(234,232,242,0.22)',
-            lineHeight: 1.65,
-            marginTop:  '0.5rem',
-            fontStyle:  'italic',
-          }}>
-            Or{' '}
-            <span style={{ color: 'rgba(149,144,236,0.4)', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(149,144,236,0.18)' }}>
-              send this to your phone
-            </span>
-            {' '}and return when you&apos;re ready.
-          </p>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+                <Button
+                  size="lg"
+                  onClick={handleSaveProfile}
+                  disabled={saveStatus === 'saving'}
+                >
+                  {saveStatus === 'saving' ? 'Saving…' : 'Save your profile and continue'}
+                </Button>
+                <Button variant="ghost" size="lg">
+                  Not now
+                </Button>
+              </div>
+
+              {/* Optional phone step */}
+              <p style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize:   13,
+                color:      'rgba(234,232,242,0.22)',
+                lineHeight: 1.65,
+                marginTop:  '0.5rem',
+                fontStyle:  'italic',
+              }}>
+                Or{' '}
+                <span style={{ color: 'rgba(149,144,236,0.4)', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(149,144,236,0.18)' }}>
+                  send this to your phone
+                </span>
+                {' '}and return when you&apos;re ready.
+              </p>
+            </>
+          )}
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════
