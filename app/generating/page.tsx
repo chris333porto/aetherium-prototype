@@ -212,7 +212,41 @@ async function runScoringAndPersist(): Promise<void> {
   // 3. Build local payload (IDs patched in below if Supabase succeeds)
   const payload = buildResultPayload(scoring, archetypeBlend, growthProfile, narrative)
 
-  // 4. Persist to Supabase (non-blocking — failure doesn't break the results page)
+  // 4. AI enrichment — this is the FIRST OpenAI call in the entire pre-dashboard flow.
+  //    It only runs here, after the user has:
+  //      a) completed 50 questions
+  //      b) provided their email (ae_identity was written in /assessment/identity)
+  //      c) passed through the context step (even if skipped)
+  //    Never fires earlier. /results-preview uses deterministic scoring only.
+  try {
+    const enrichRes = await fetch('/api/generate-results', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dimensionScores: scoring.dimensions,
+        // Use narrative fields if provided; fall back to "[not provided]" so the
+        // API route's required-field validation still passes.
+        past:    narrative.recent_challenges  || '[not provided]',
+        present: narrative.recurring_pattern  || '[not provided]',
+        future:  narrative.desired_direction  || '[not provided]',
+      }),
+    })
+
+    if (enrichRes.ok) {
+      const enriched = (await enrichRes.json()) as { data: Record<string, unknown> }
+      // Merge AI-generated fields into the payload so /results can render them
+      Object.assign(payload, { enriched: enriched.data })
+      // Also cache separately so /results can detect whether enrichment ran
+      localStorage.setItem('ae_results_enriched', JSON.stringify(enriched.data))
+    }
+  } catch (err) {
+    // AI enrichment failed (network error, missing key, quota, etc.).
+    // The full results page degrades gracefully — deterministic sections
+    // still render. Only AI-synthesised copy will be absent.
+    console.warn('[Aetherium] AI enrichment skipped:', err)
+  }
+
+  // 5. Persist to Supabase (non-blocking — failure doesn't break the results page)
   try {
     // Re-use the assessment created when the user started; fall back to a new one
     const storedId = localStorage.getItem('ae_assessment_id')

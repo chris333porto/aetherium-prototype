@@ -43,7 +43,26 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
       "Bash(grep -v \"//\\\\s*$\")",
       "Bash(find /Users/christopherporto/Desktop/Aetherium/prototype/lib -type f -name *.ts -o -name *.tsx -o -name *.js -o -name *.json)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(ls -la /Users/christopherporto/Desktop/Aetherium/prototype/*.ts /Users/christopherporto/Desktop/Aetherium/prototype/*.js)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Read(//usr/local/bin/**)",
+      "Bash(ls ~/.nvm/versions/node/*/bin/node)",
+      "Bash(/usr/local/bin/node node_modules/.bin/tsc --noEmit)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[''''version'''']\\)\")",
+      "Bash(command -v node)",
+      "Read(//usr/local/lib/node_modules/npm/bin/**)",
+      "Read(//usr/bin/**)",
+      "Bash(node -e \"console.log\\(process.execPath\\)\")",
+      "Bash(ls /usr/local/bin/node*)",
+      "Bash(ls /usr/bin/node*)",
+      "Read(//usr/local/lib/**)",
+      "Bash(grep -r TURBOPACK_ROOT /Users/christopherporto/prototype/node_modules/next/dist --include=*.js -l)",
+      "Bash(grep -r \"TURBOPACK_ROOT\\\\|turbopack_root\" /Users/christopherporto/prototype/node_modules/next/dist/compiled/next-server --include=*.js -l)",
+      "Bash(grep -r TURBOPACK_ROOT /Users/christopherporto/prototype/node_modules/next/dist --include=*.ts -l)",
+      "Bash(pandoc \"/Users/christopherporto/Desktop/Aetherium/Core Documents - v2/System Intelligence - Source Documents/Aetherium_Locked_Archetype_Breakdown.docx\" -t plain)",
+      "Bash(brew install:*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

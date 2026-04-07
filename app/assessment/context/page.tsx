@@ -9,131 +9,38 @@ import {
   parseNarrativeAnswers,
   EMPTY_NARRATIVE,
   type NarrativeAnswers,
-  type EnergyState,
 } from '@/lib/assessment/narrative'
-import { PREVIEW_REFLECTIONS } from '@/lib/dev/previewMock'
 
-// ─── Energy options ────────────────────────────────────────────────────────────
+// ─── Three focused prompts ─────────────────────────────────────────────────────
+// Maps to existing NarrativeAnswers fields so downstream scoring is unchanged.
 
-const ENERGY_OPTIONS: { value: EnergyState; description: string }[] = [
-  { value: 'Scattered', description: 'Pulled in too many directions'         },
-  { value: 'Stuck',     description: 'Not moving forward'                    },
-  { value: 'Stable',    description: 'Functioning, but not fully engaged'    },
-  { value: 'Focused',   description: 'Clear and moving with purpose'         },
-  { value: 'Driven',    description: 'High energy, strong momentum'          },
-]
+type TextFieldId = 'recent_challenges' | 'recurring_pattern' | 'desired_direction'
 
-// ─── Section config ────────────────────────────────────────────────────────────
-
-type TextFieldId = Exclude<keyof NarrativeAnswers, 'energy_state'>
-
-interface TextPrompt {
-  type:        'text'
+interface Prompt {
   id:          TextFieldId
   question:    string
   placeholder: string
   rows:        number
 }
 
-interface ChoicePrompt {
-  type:     'choice'
-  id:       'energy_state'
-  question: string
-}
-
-type Prompt = TextPrompt | ChoicePrompt
-
-interface Section {
-  label:       string
-  description: string
-  prompts:     Prompt[]
-}
-
-const SECTIONS: Section[] = [
+const PROMPTS: Prompt[] = [
   {
-    label:       'Context',
-    description: 'Where you actually are.',
-    prompts: [
-      {
-        type:        'text',
-        id:          'life_phase',
-        question:    'Describe the season of life you are in right now. Not where you want to be — where you actually are.',
-        placeholder: 'A transition, a plateau, a rebuild, a new beginning…',
-        rows:        3,
-      },
-      {
-        type:        'text',
-        id:          'environment',
-        question:    'What does your current environment require from you? What are you surrounded by, responsible for, or pulled between?',
-        placeholder: 'Work, relationships, obligations, living situation, pace of life…',
-        rows:        3,
-      },
-    ],
+    id:          'recent_challenges',
+    question:    "What's actually happening in your life right now? Where are you feeling the most friction, pressure, or tension day to day?",
+    placeholder: 'A situation, a relationship, a pressure you\'re navigating…',
+    rows:        4,
   },
   {
-    label:       'Friction',
-    description: 'Where energy is stuck or leaking.',
-    prompts: [
-      {
-        type:        'text',
-        id:          'recent_challenges',
-        question:    'What has felt unresolved, draining, or quietly off lately?',
-        placeholder: 'A situation, a feeling, a relationship, a pattern of avoiding…',
-        rows:        3,
-      },
-      {
-        type:        'text',
-        id:          'recurring_pattern',
-        question:    'What pattern do you keep seeing in yourself, even when you want to respond differently?',
-        placeholder: 'A reaction, a habit of thought, a way of getting in your own way…',
-        rows:        3,
-      },
-      {
-        type:        'text',
-        id:          'avoidance',
-        question:    'What do you already know you need to face, but keep putting off?',
-        placeholder: 'A decision, a conversation, a truth, an action…',
-        rows:        2,
-      },
-    ],
+    id:          'recurring_pattern',
+    question:    "What keeps repeating that you haven't fully resolved? What do you already know — but aren't fully acting on?",
+    placeholder: 'A pattern, a habit, a truth you\'re circling around…',
+    rows:        4,
   },
   {
-    label:       'Direction',
-    description: 'The pull toward what\'s next.',
-    prompts: [
-      {
-        type:        'text',
-        id:          'desired_direction',
-        question:    'If something in you shifted over the next six months — how would you be different?',
-        placeholder: 'In your work, your relationships, your inner life, your sense of yourself…',
-        rows:        3,
-      },
-      {
-        type:        'text',
-        id:          'deeper_pull',
-        question:    'Beneath obligation and expectation — what is actually calling you forward?',
-        placeholder: 'Not the goal. The feeling or quality of life you\'re after…',
-        rows:        3,
-      },
-    ],
-  },
-  {
-    label:       'Energy',
-    description: 'Your current state and vitality.',
-    prompts: [
-      {
-        type:     'choice',
-        id:       'energy_state',
-        question: 'How are you running right now?',
-      },
-      {
-        type:        'text',
-        id:          'energy_sources',
-        question:    'What is giving you energy right now — even slightly?',
-        placeholder: 'People, activities, environments, ideas, moments…',
-        rows:        2,
-      },
-    ],
+    id:          'desired_direction',
+    question:    "Where do you feel pulled to go next? If things were more aligned, what would your life look like in the next 6 months?",
+    placeholder: 'Not the goal — the feeling or quality of life you\'re moving toward…',
+    rows:        4,
   },
 ]
 
@@ -205,13 +112,13 @@ function MicButton({
       onClick={toggle}
       title={listening ? 'Stop recording' : 'Speak your answer'}
       style={{
-        flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        width: 26, height: 26, borderRadius: '50%',
-        background: listening ? 'rgba(149,144,236,0.14)' : 'rgba(234,232,242,0.04)',
-        border: listening ? '1px solid rgba(149,144,236,0.48)' : '1px solid rgba(234,232,242,0.08)',
-        boxShadow: listening ? '0 0 10px rgba(149,144,236,0.25)' : 'none',
-        cursor: 'pointer', transition: 'all 0.2s',
+        flexShrink:  0,
+        display:     'flex', alignItems: 'center', justifyContent: 'center',
+        width:       26, height: 26, borderRadius: '50%',
+        background:  listening ? 'rgba(149,144,236,0.14)' : 'rgba(234,232,242,0.04)',
+        border:      listening ? '1px solid rgba(149,144,236,0.48)' : '1px solid rgba(234,232,242,0.08)',
+        boxShadow:   listening ? '0 0 10px rgba(149,144,236,0.25)' : 'none',
+        cursor:      'pointer', transition: 'all 0.2s',
       }}
     >
       <svg width="11" height="13" viewBox="0 0 12 14" fill="none" style={{ opacity: listening ? 1 : 0.3 }}>
@@ -224,81 +131,6 @@ function MicButton({
           stroke={listening ? '#9590ec' : 'rgba(234,232,242,0.8)'} strokeWidth="1" strokeLinecap="round" />
       </svg>
     </button>
-  )
-}
-
-// ─── Energy choice ─────────────────────────────────────────────────────────────
-
-function EnergyChoice({
-  selected,
-  onChange,
-}: {
-  selected: string
-  onChange: (value: EnergyState) => void
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      {ENERGY_OPTIONS.map(opt => {
-        const isSelected = selected === opt.value
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            style={{
-              display:     'flex',
-              alignItems:  'center',
-              gap:         '0.85rem',
-              padding:     '0.7rem 1rem',
-              background:  isSelected ? 'rgba(149,144,236,0.08)' : 'rgba(234,232,242,0.02)',
-              border:      isSelected
-                ? '1px solid rgba(149,144,236,0.35)'
-                : '1px solid rgba(234,232,242,0.07)',
-              borderRadius: 3,
-              cursor:      'pointer',
-              textAlign:   'left',
-              transition:  'all 0.15s',
-              boxShadow:   isSelected ? '0 0 12px rgba(149,144,236,0.12)' : 'none',
-            }}
-          >
-            {/* Dot indicator */}
-            <div style={{
-              flexShrink:  0,
-              width:       8,
-              height:      8,
-              borderRadius: '50%',
-              background:  isSelected ? '#9590ec' : 'transparent',
-              border:      isSelected
-                ? '1px solid rgba(149,144,236,0.6)'
-                : '1px solid rgba(234,232,242,0.2)',
-              boxShadow:   isSelected ? '0 0 6px rgba(149,144,236,0.5)' : 'none',
-              transition:  'all 0.15s',
-            }} />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-              <span style={{
-                fontFamily:    "'Cinzel', serif",
-                fontSize:      9,
-                letterSpacing: '0.25em',
-                textTransform: 'uppercase',
-                color:         isSelected ? 'rgba(149,144,236,0.9)' : 'rgba(234,232,242,0.5)',
-                transition:    'color 0.15s',
-              }}>
-                {opt.value}
-              </span>
-              <span style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontSize:   13,
-                color:      isSelected ? 'rgba(234,232,242,0.65)' : 'rgba(234,232,242,0.28)',
-                transition: 'color 0.15s',
-              }}>
-                {opt.description}
-              </span>
-            </div>
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -333,13 +165,6 @@ export default function ContextPage() {
     } catch { /* ignore */ }
   }, [])
 
-  // DEV: pre-fill when ?preview=1
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('preview') !== '1') return
-    setNarrative(parseNarrativeAnswers(PREVIEW_REFLECTIONS))
-  }, [])
-
   const handleTextChange = useCallback((id: TextFieldId, val: string) => {
     setNarrative(prev => ({ ...prev, [id]: val }))
   }, [])
@@ -351,12 +176,19 @@ export default function ContextPage() {
     }))
   }, [])
 
-  const handleEnergyChange = useCallback((value: EnergyState) => {
-    setNarrative(prev => ({ ...prev, energy_state: value }))
-  }, [])
-
-  function handleContinue() {
+  function saveAndPush(destination: string) {
     localStorage.setItem('ae_narrative_answers', JSON.stringify(narrative))
+    router.push(destination)
+  }
+
+  // Primary: user has added context — full AI enrichment with narrative
+  function handleRefine() {
+    saveAndPush('/generating')
+  }
+
+  // Secondary: skip context — AI enrichment runs with empty narrative (baseline only)
+  function handleBaseline() {
+    localStorage.setItem('ae_narrative_answers', JSON.stringify({}))
     router.push('/generating')
   }
 
@@ -365,27 +197,27 @@ export default function ContextPage() {
 
       {/* Nav */}
       <nav style={{
-        position:     'relative',
-        zIndex:       10,
-        display:      'flex',
-        alignItems:   'center',
+        position:       'relative',
+        zIndex:         10,
+        display:        'flex',
+        alignItems:     'center',
         justifyContent: 'space-between',
-        padding:      '1.4rem 2.5rem',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        padding:        '1.4rem 2.5rem',
+        borderBottom:   '1px solid rgba(255,255,255,0.04)',
       }}>
         <Link
-          href="/assessment"
+          href="/assessment/identity"
           style={{
-            fontFamily:    "'Cinzel', serif",
-            fontSize:      9,
-            letterSpacing: '0.32em',
-            textTransform: 'uppercase',
-            color:         'rgba(234,232,242,0.28)',
+            fontFamily:     "'Cinzel', serif",
+            fontSize:       9,
+            letterSpacing:  '0.32em',
+            textTransform:  'uppercase',
+            color:          'rgba(234,232,242,0.28)',
             textDecoration: 'none',
-            transition:    'color 0.2s',
+            transition:     'color 0.2s',
           }}
         >
-          ← Assessment
+          ← Back
         </Link>
         <span style={{
           fontFamily:    "'Cinzel', serif",
@@ -394,19 +226,19 @@ export default function ContextPage() {
           textTransform: 'uppercase',
           color:         'rgba(234,232,242,0.18)',
         }}>
-          Context
+          Deepen Your Profile
         </span>
       </nav>
 
       {/* Content */}
       <div style={{
-        flex:       1,
-        maxWidth:   620,
-        margin:     '0 auto',
-        padding:    '3.5rem 2.5rem 5rem',
-        width:      '100%',
-        position:   'relative',
-        zIndex:     10,
+        flex:      1,
+        maxWidth:  620,
+        margin:    '0 auto',
+        padding:   '3.5rem 2.5rem 5rem',
+        width:     '100%',
+        position:  'relative',
+        zIndex:    10,
       }}>
 
         {/* Page header */}
@@ -418,7 +250,7 @@ export default function ContextPage() {
           color:         'rgba(149,144,236,0.45)',
           marginBottom:  '1.5rem',
         }}>
-          Your Context
+          Deepen Your Profile
         </p>
 
         <h1 style={{
@@ -430,7 +262,7 @@ export default function ContextPage() {
           lineHeight:    1.12,
           marginBottom:  '1.25rem',
         }}>
-          Before we interpret your pattern, we need to understand your reality.
+          Three questions that make your results more precise.
         </h1>
 
         <p style={{
@@ -440,123 +272,58 @@ export default function ContextPage() {
           color:         'rgba(234,232,242,0.45)',
           lineHeight:    1.78,
           maxWidth:      480,
-          marginBottom:  '2rem',
+          marginBottom:  '3rem',
         }}>
-          The pattern you just measured only makes sense inside a life.
-          These questions are about that life — where it is right now.
+          Optional — but the more you share, the more specific your profile becomes.
+          You can speak your answers using the microphone.
         </p>
 
-        {/* Soft check-in — non-interactive, not stored */}
-        <div style={{
-          marginBottom:  '3rem',
-          paddingLeft:   '1.1rem',
-          borderLeft:    '2px solid rgba(149,144,236,0.12)',
-        }}>
-          <p style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize:   15,
-            color:      'rgba(234,232,242,0.3)',
-            lineHeight: 1.7,
-            fontStyle:  'italic',
-          }}>
-            Take a breath. How are you feeling right now in your body?
-          </p>
-        </div>
+        {/* Prompts */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.75rem', marginBottom: '3rem' }}>
+          {PROMPTS.map((prompt, i) => (
+            <div key={prompt.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
-        {/* Sections */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
-          {SECTIONS.map((section, si) => (
-            <div key={section.label}>
-
-              {/* Section header */}
-              <div style={{
-                display:      'flex',
-                alignItems:   'center',
-                gap:          '0.85rem',
-                marginBottom: '1.5rem',
-              }}>
-                <div style={{
-                  width:      2,
-                  height:     28,
-                  background: 'linear-gradient(to bottom, rgba(149,144,236,0.6), rgba(149,144,236,0.05))',
-                  borderRadius: 1,
-                  flexShrink: 0,
-                }} />
-                <div>
-                  <p style={{
+              {/* Number + question row */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{
                     fontFamily:    "'Cinzel', serif",
-                    fontSize:      8,
-                    letterSpacing: '0.4em',
+                    fontSize:      7.5,
+                    letterSpacing: '0.3em',
                     textTransform: 'uppercase',
-                    color:         'rgba(149,144,236,0.55)',
-                    marginBottom:  '0.2rem',
+                    color:         'rgba(149,144,236,0.35)',
+                    display:       'block',
+                    marginBottom:  '0.5rem',
                   }}>
-                    {section.label}
-                  </p>
+                    0{i + 1}
+                  </span>
                   <p style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    fontSize:   13,
-                    color:      'rgba(234,232,242,0.3)',
-                    fontStyle:  'italic',
+                    fontSize:   18,
+                    color:      'rgba(234,232,242,0.78)',
+                    lineHeight: 1.5,
                   }}>
-                    {section.description}
+                    {prompt.question}
                   </p>
                 </div>
+                <MicButton fieldId={prompt.id} onTranscript={handleTranscript} />
               </div>
 
-              {/* Prompts */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-                {section.prompts.map(prompt => (
-                  <div key={prompt.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              <textarea
+                rows={prompt.rows}
+                placeholder={prompt.placeholder}
+                value={narrative[prompt.id]}
+                onChange={e => handleTextChange(prompt.id, e.target.value)}
+                style={textareaStyle}
+                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(149,144,236,0.32)' }}
+                onBlur={e  => { e.currentTarget.style.borderColor = 'rgba(234,232,242,0.08)' }}
+              />
 
-                    {/* Question label row */}
-                    <div style={{
-                      display:        'flex',
-                      alignItems:     'flex-start',
-                      justifyContent: 'space-between',
-                      gap:            '0.75rem',
-                    }}>
-                      <p style={{
-                        fontFamily: "'Cormorant Garamond', serif",
-                        fontSize:   16,
-                        color:      'rgba(234,232,242,0.72)',
-                        lineHeight: 1.45,
-                        flex:       1,
-                      }}>
-                        {prompt.question}
-                      </p>
-                      {prompt.type === 'text' && (
-                        <MicButton fieldId={prompt.id} onTranscript={handleTranscript} />
-                      )}
-                    </div>
-
-                    {/* Input */}
-                    {prompt.type === 'text' ? (
-                      <textarea
-                        rows={prompt.rows}
-                        placeholder={prompt.placeholder}
-                        value={narrative[prompt.id]}
-                        onChange={e => handleTextChange(prompt.id, e.target.value)}
-                        style={textareaStyle}
-                        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(149,144,236,0.32)' }}
-                        onBlur={e  => { e.currentTarget.style.borderColor = 'rgba(234,232,242,0.08)' }}
-                      />
-                    ) : (
-                      <EnergyChoice
-                        selected={narrative.energy_state}
-                        onChange={handleEnergyChange}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Section divider (not after last) */}
-              {si < SECTIONS.length - 1 && (
+              {i < PROMPTS.length - 1 && (
                 <div style={{
-                  marginTop:  '3.5rem',
+                  marginTop:  '1rem',
                   height:     1,
-                  background: 'linear-gradient(to right, rgba(149,144,236,0.1), transparent)',
+                  background: 'linear-gradient(to right, rgba(149,144,236,0.08), transparent)',
                 }} />
               )}
             </div>
@@ -565,7 +332,7 @@ export default function ContextPage() {
 
         {/* Mic hint */}
         <div style={{
-          marginTop:     '2.5rem',
+          marginBottom:  '2.5rem',
           paddingLeft:   '1.2rem',
           paddingTop:    '0.75rem',
           paddingBottom: '0.75rem',
@@ -585,13 +352,55 @@ export default function ContextPage() {
         </div>
 
         {/* CTAs */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '2.5rem' }}>
-          <Button size="lg" onClick={handleContinue}>
-            Generate My Profile →
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+          {/* Primary — adds context, produces richer results */}
+          <Button size="lg" onClick={handleRefine}>
+            Refine My Profile →
           </Button>
-          <Link href="/assessment">
-            <Button variant="ghost" size="lg">← Go Back</Button>
-          </Link>
+
+          {/* Secondary — skips context, produces baseline results only */}
+          <button
+            onClick={handleBaseline}
+            style={{
+              fontFamily:    "'Cinzel', serif",
+              fontSize:      9,
+              letterSpacing: '0.28em',
+              textTransform: 'uppercase',
+              color:         'rgba(234,232,242,0.3)',
+              background:    'transparent',
+              border:        '1px solid rgba(234,232,242,0.07)',
+              borderRadius:  3,
+              padding:       '11px 20px',
+              cursor:        'pointer',
+              transition:    'all 0.2s',
+              width:         '100%',
+              textAlign:     'center',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = 'rgba(234,232,242,0.5)'
+              e.currentTarget.style.borderColor = 'rgba(234,232,242,0.14)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = 'rgba(234,232,242,0.3)'
+              e.currentTarget.style.borderColor = 'rgba(234,232,242,0.07)'
+            }}
+          >
+            Use Baseline Results →
+          </button>
+
+          <p style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize:   12,
+            color:      'rgba(234,232,242,0.2)',
+            fontStyle:  'italic',
+            textAlign:  'center',
+            marginTop:  '0.25rem',
+          }}>
+            Adding context produces a more specific profile.
+            Skipping uses your dimensional scores alone.
+          </p>
+
         </div>
 
       </div>

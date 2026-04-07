@@ -164,7 +164,7 @@ export default function WelcomePage() {
 
         {/* CTAs */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Link href="/assessment/identity">
+          <Link href="/assessment">
             <Button size="lg">Begin the Assessment</Button>
           </Link>
           <Link href="/">

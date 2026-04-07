@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/Button'
 import { StepProgress } from '@/components/ui/Progress'
 import { EnergyField } from '@/components/EnergyField'
 import { createAssessment, saveAssessmentAnswers } from '@/lib/persistence/assessments'
-import type { RawAnswers } from '@/lib/scoring/engine'
+import { scoreAssessment }     from '@/lib/scoring/engine'
+import { buildArchetypeBlend } from '@/lib/archetypes/matcher'
+import type { RawAnswers }     from '@/lib/scoring/engine'
 import { PreviewNav } from '@/components/dev/PreviewNav'
 import { PREVIEW_ANSWERS } from '@/lib/dev/previewMock'
 
@@ -316,10 +318,10 @@ export default function AssessmentPage() {
     setAnswers(PREVIEW_ANSWERS)
   }, [])
 
-  // Auto-advance from transition screen → context
+  // Auto-advance from transition screen → results preview
   useEffect(() => {
     if (!showTransition) return
-    const t = setTimeout(() => router.push('/assessment/context'), 2800)
+    const t = setTimeout(() => router.push('/results-preview'), 2800)
     return () => clearTimeout(t)
   }, [showTransition, router])
 
@@ -345,15 +347,40 @@ export default function AssessmentPage() {
       setStep(s => s + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
-      // Final step (Aether) — save answers, show transition bridge
+      // Final step (Aether) — save answers, compute preview scores, show transition bridge
       localStorage.setItem('ae_assessment_answers', JSON.stringify(answers))
+
+      // ── Compute deterministic preview scores (no OpenAI) ──────────────────
+      // Written to ae_preview_scores so /results-preview can render immediately
+      // without triggering any AI calls. Full enrichment only happens in /generating.
+      try {
+        const scoring        = scoreAssessment(answers as RawAnswers)
+        const archetypeBlend = buildArchetypeBlend(scoring.dimensions)
+        const entries        = Object.entries(scoring.dimensions) as [Dimension, number][]
+        const dominantDimension  = entries.reduce((a, b) => b[1] > a[1] ? b : a)[0]
+        const deficientDimension = entries.reduce((a, b) => b[1] < a[1] ? b : a)[0]
+
+        localStorage.setItem('ae_preview_scores', JSON.stringify({
+          dimensions:        scoring.dimensions,
+          profiles:          scoring.profiles,
+          archetypeBlend,
+          dominantDimension,
+          deficientDimension,
+          overallScore:      scoring.overallScore,
+          coherenceScore:    scoring.coherenceScore,
+        }))
+      } catch (err) {
+        // Preview scoring failed — /results-preview guard will redirect to /assessment
+        console.warn('[Aetherium] Preview scoring failed:', err)
+      }
+
       setShowTransition(true)
     }
   }
 
   function handleBack() {
     if (step === 0) {
-      router.push('/assessment/identity')
+      router.push('/onboarding/welcome')
     } else {
       setStep(s => s - 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -393,7 +420,7 @@ export default function AssessmentPage() {
             Now we need to understand the life it&apos;s running through.
           </p>
           <button
-            onClick={() => router.push('/assessment/context')}
+            onClick={() => router.push('/results-preview')}
             style={{
               fontFamily: "'Cinzel', serif", fontSize: 9,
               letterSpacing: '0.35em', textTransform: 'uppercase',

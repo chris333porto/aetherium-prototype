@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter }                     from 'next/navigation'
 import Link                              from 'next/link'
 import { DimensionChart }               from '@/components/DimensionChart'
 import { EnergyField }                  from '@/components/EnergyField'
@@ -729,6 +730,7 @@ function EnhancedPracticeItem({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ResultsPage() {
+  const router = useRouter()
   const [data,       setData]      = useState<ResultsData | null>(null)
   const [loaded,     setLoaded]    = useState(false)
   const [revealing,  setRevealing] = useState(true)
@@ -751,11 +753,11 @@ export default function ResultsPage() {
       if (!rawIdentity) throw new Error('No identity data found. Please complete the identity step first.')
 
       const id = JSON.parse(rawIdentity) as {
-        firstName: string
-        lastName:  string
-        email:     string
-        birthDate: string
-        location?: { city?: string; region?: string; country?: string; timezone?: string }
+        firstName:  string
+        lastName?:  string
+        email:      string
+        birthDate?: string
+        location?:  { city?: string; region?: string; country?: string; timezone?: string }
       }
 
       // ae_assessment_id is cleared by generating/page.tsx after persistence.
@@ -768,7 +770,7 @@ export default function ResultsPage() {
         identity: {
           email:     id.email,
           firstName: id.firstName,
-          lastName:  id.lastName,
+          lastName:  id.lastName   || null,
           birthDate: id.birthDate  || null,
           city:      id.location?.city     || null,
           region:    id.location?.region   || null,
@@ -810,6 +812,22 @@ export default function ResultsPage() {
         finalize(PREVIEW_RESULT)
         return
       }
+
+      // ── Temporary client-side identity guard ──────────────────────────────
+      // Prevents direct URL access to /results without passing through the
+      // commitment step (/assessment/identity). This is a prototype-level guard
+      // only — it relies on localStorage and can be bypassed by a determined user.
+      //
+      // TODO (production): Replace with server-side session check so that full
+      // results are only served to authenticated (and eventually subscribed) users.
+      // The natural upgrade path is: middleware.ts checks for a valid Supabase
+      // session cookie; if absent, redirect to /assessment/identity with ?next=/results.
+      const hasIdentity = Boolean(localStorage.getItem('ae_identity'))
+      if (!hasIdentity) {
+        router.replace('/assessment/identity')
+        return
+      }
+      // ── End guard ──────────────────────────────────────────────────────────
 
       // Load raw answers for derivation panel
       try {
