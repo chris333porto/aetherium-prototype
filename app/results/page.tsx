@@ -768,14 +768,13 @@ export default function ResultsPage() {
 
       await saveProfileRecord({
         identity: {
-          email:     id.email,
-          firstName: id.firstName,
-          lastName:  id.lastName   || null,
-          birthDate: id.birthDate  || null,
-          city:      id.location?.city     || null,
-          region:    id.location?.region   || null,
-          country:   id.location?.country  || null,
-          timezone:  id.location?.timezone || null,
+    email: id.email,
+firstName: id.firstName,
+lastName: id.lastName || '',
+birthDate: id.birthDate || null,
+city: id.location?.city || '',
+region: id.location?.region || '',
+country: id.location?.country || '',
         },
         assessmentId,
         profileStateId,
