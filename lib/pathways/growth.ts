@@ -1,3 +1,16 @@
+/**
+ * growth.ts
+ *
+ * Growth profile derivation — CANONICAL
+ *
+ * Canon rule: "Use the table's Growth Edge as the directional instruction
+ * for the archetype." Growth edge comes from the MATCHED archetype, not
+ * from the lowest dimension score.
+ *
+ * Evolution pathway uses archetype categories (Core → Expansion → Transcendent)
+ * as progression direction, not the old 5-state linear ladder.
+ */
+
 import type { DimensionScores, EvolutionState } from '../scoring/engine'
 import {
   getWeakestDimension,
@@ -6,46 +19,54 @@ import {
   getNextState,
   STATE_ORDER,
 } from '../scoring/engine'
-import { ARCHETYPES, type Archetype } from '../archetypes/definitions'
+import {
+  ARCHETYPES,
+  type Archetype,
+  type ArchetypeCategory,
+} from '../archetypes/definitions'
 import { DIMENSION_META, type Dimension } from '../assessment/questions'
 
+// ── Types ────────────────────────────────────────────────────────────────────
+
 export interface GrowthEdge {
-  dimension: Dimension
-  label: string
-  score: number
+  dimension:   Dimension | null  // null for Burnout (restore), Embodied Self (sustain), Unified Being (evolve)
+  label:       string
+  score:       number
   description: string
-  practices: string[]
+  practices:   string[]
 }
 
 export interface EvolutionStep {
-  label: string
-  state: EvolutionState
-  archetype: Archetype | null
+  label:       string
+  state:       EvolutionState   // kept for backward compat with results page
+  archetype:   Archetype | null
   description: string
 }
 
 export interface EvolutionPathway {
   current: EvolutionStep
-  next: EvolutionStep
-  future: EvolutionStep
+  next:    EvolutionStep
+  future:  EvolutionStep
 }
 
 export interface PathwayOption {
-  id: string
-  title: string
-  targetArchetype: Archetype
-  growthDimension: Dimension
-  description: string
+  id:                    string
+  title:                 string
+  targetArchetype:       Archetype
+  growthDimension:       Dimension | null
+  description:           string
   transitionDescription: string
 }
 
 export interface GrowthProfile {
-  growthEdge: GrowthEdge
-  currentState: EvolutionState
-  pathwayOptions: PathwayOption[]
-  evolutionPathway: EvolutionPathway
-  practices: string[]
+  growthEdge:        GrowthEdge
+  currentState:      EvolutionState
+  pathwayOptions:    PathwayOption[]
+  evolutionPathway:  EvolutionPathway
+  practices:         string[]
 }
+
+// ── Growth descriptions & practices (per dimension) ──────────────────────────
 
 const GROWTH_EDGE_DESCRIPTIONS: Record<Dimension, string> = {
   aether: 'Your growth edge is Intention. The work is clarifying what you are truly here to do and aligning your life around that signal — not the noise of others\' expectations.',
@@ -83,104 +104,116 @@ const GROWTH_PRACTICES: Record<Dimension, string[]> = {
   ],
 }
 
-export function buildGrowthProfile(scores: DimensionScores): GrowthProfile {
-  const weakest = getWeakestDimension(scores)
-  const strongest = getStrongestDimension(scores)
+// ── Main builder ─────────────────────────────────────────────────────────────
+
+/**
+ * Build growth profile using the MATCHED archetype's canonical growth edge,
+ * not the raw lowest dimension score.
+ *
+ * @param scores - User's 0–100 dimension scores
+ * @param primaryArchetype - The matched primary archetype from the canon matcher
+ */
+export function buildGrowthProfile(
+  scores: DimensionScores,
+  primaryArchetype?: Archetype,
+): GrowthProfile {
   const overallScore = Object.values(scores).reduce((a, b) => a + b, 0) / 5
   const currentState = getEvolutionState(overallScore)
-  const nextState = getNextState(currentState)
 
-  // Growth edge
-  const growthEdge: GrowthEdge = {
-    dimension: weakest,
-    label: DIMENSION_META[weakest].label,
-    score: scores[weakest],
-    description: GROWTH_EDGE_DESCRIPTIONS[weakest],
-    practices: GROWTH_PRACTICES[weakest],
-  }
+  // Growth edge: from archetype if available, else from lowest dimension
+  const growthDimension = primaryArchetype?.growthDimension ?? getWeakestDimension(scores)
+  const weakest = getWeakestDimension(scores)
 
-  // Build pathway options: archetypes in the next state that have high expression
-  // of the weakest dimension (above 55)
-  const targetArchetypes = nextState
-    ? ARCHETYPES.filter(a => {
-        if (a.state !== nextState) return false
-        const weakScore = a.profile[weakest]
-        return weakScore >= 55
-      })
-    : ARCHETYPES.filter(a => {
-        if (a.state !== currentState) return false
-        return a.profile[weakest] >= 65
-      })
+  const growthEdge: GrowthEdge = growthDimension
+    ? {
+        dimension: growthDimension,
+        label: DIMENSION_META[growthDimension].label,
+        score: scores[growthDimension],
+        description: primaryArchetype
+          ? `${primaryArchetype.growthEdge}. ${GROWTH_EDGE_DESCRIPTIONS[growthDimension]}`
+          : GROWTH_EDGE_DESCRIPTIONS[growthDimension],
+        practices: GROWTH_PRACTICES[growthDimension],
+      }
+    : {
+        // Special cases: Burnout (restore), Embodied Self (sustain), Unified Being (evolve)
+        dimension: null,
+        label: primaryArchetype?.growthEdge ?? 'Restore',
+        score: overallScore,
+        description: primaryArchetype?.rebalancingPath ?? 'Restore balance across all dimensions.',
+        practices: primaryArchetype?.practiceOrientation
+          ? [primaryArchetype.practiceOrientation]
+          : GROWTH_PRACTICES[weakest],
+      }
 
-  // Sort by how well they express the growth dimension
-  targetArchetypes.sort((a, b) => b.profile[weakest] - a.profile[weakest])
+  // Pathway options: archetypes that develop the growth dimension
+  const pathwayOptions = buildPathwayOptions(scores, growthDimension ?? weakest, primaryArchetype)
 
-  // Take up to 3 pathway options
-  const pathwayOptions: PathwayOption[] = targetArchetypes.slice(0, 3).map(archetype => ({
-    id: archetype.id,
-    title: `Toward ${archetype.name}`,
-    targetArchetype: archetype,
-    growthDimension: weakest,
-    description: archetype.description,
-    transitionDescription: buildTransitionDescription(currentState, archetype, weakest),
-  }))
-
-  // If no options found (e.g. at unified), use current state archetypes
-  if (pathwayOptions.length === 0) {
-    const currentStateOptions = ARCHETYPES
-      .filter(a => a.state === currentState && a.profile[weakest] >= 60)
-      .slice(0, 2)
-    pathwayOptions.push(...currentStateOptions.map(archetype => ({
-      id: archetype.id,
-      title: `Deepen into ${archetype.name}`,
-      targetArchetype: archetype,
-      growthDimension: weakest,
-      description: archetype.description,
-      transitionDescription: buildTransitionDescription(currentState, archetype, weakest),
-    })))
-  }
-
-  // Evolution pathway: YOU → NEXT → FUTURE
-  const evolution = buildEvolutionPathway(scores, currentState)
+  // Evolution pathway (kept for UI compatibility)
+  const evolutionPathway = buildEvolutionPathway(scores, currentState)
 
   return {
     growthEdge,
     currentState,
-    pathwayOptions: pathwayOptions.slice(0, 3),
-    evolutionPathway: evolution,
-    practices: GROWTH_PRACTICES[weakest],
+    pathwayOptions,
+    evolutionPathway,
+    practices: growthDimension ? GROWTH_PRACTICES[growthDimension] : GROWTH_PRACTICES[weakest],
   }
 }
 
-function buildTransitionDescription(
-  from: EvolutionState,
-  to: Archetype,
-  growthDimension: Dimension
-): string {
-  const dimLabel = DIMENSION_META[growthDimension].label
-  return `By developing ${dimLabel}, you begin to embody qualities of ${to.name} — ${to.tagline.toLowerCase()}`
+// ── Pathway options ──────────────────────────────────────────────────────────
+
+/**
+ * Category progression order for pathway selection.
+ * Shadow → Core → Expansion → Transcendent
+ */
+const CATEGORY_ORDER: ArchetypeCategory[] = ['shadow', 'core', 'expansion', 'transcendent']
+
+function getNextCategory(current: ArchetypeCategory): ArchetypeCategory {
+  const idx = CATEGORY_ORDER.indexOf(current)
+  return CATEGORY_ORDER[Math.min(idx + 1, CATEGORY_ORDER.length - 1)]
 }
+
+function buildPathwayOptions(
+  scores: DimensionScores,
+  growthDimension: Dimension,
+  primaryArchetype?: Archetype,
+): PathwayOption[] {
+  const currentCategory = primaryArchetype?.category ?? 'core'
+  const nextCategory = getNextCategory(currentCategory)
+
+  // Find archetypes that have the growth dimension as a high vector value
+  const candidates = ARCHETYPES.filter(a => {
+    // Prefer archetypes in the next category or same category
+    const inRange = a.category === nextCategory || a.category === currentCategory
+    // Must have meaningful expression of the growth dimension
+    const hasGrowthStrength = a.vector[growthDimension] >= 3
+    return inRange && hasGrowthStrength
+  })
+
+  // Sort by vector strength in the growth dimension
+  candidates.sort((a, b) => b.vector[growthDimension] - a.vector[growthDimension])
+
+  return candidates.slice(0, 3).map(archetype => ({
+    id: archetype.id,
+    title: `Toward ${archetype.name}`,
+    targetArchetype: archetype,
+    growthDimension,
+    description: archetype.corePattern,
+    transitionDescription: `By developing ${DIMENSION_META[growthDimension].label}, you begin to embody qualities of ${archetype.name}.`,
+  }))
+}
+
+// ── Evolution pathway (backward-compatible) ──────────────────────────────────
 
 function buildEvolutionPathway(
   scores: DimensionScores,
-  currentState: EvolutionState
+  currentState: EvolutionState,
 ): EvolutionPathway {
-  const overallScore = Object.values(scores).reduce((a, b) => a + b, 0) / 5
   const currentStateIdx = STATE_ORDER.indexOf(currentState)
 
-  // Current step — find closest matching archetype in current state
-  const currentStateArchetypes = ARCHETYPES.filter(a => a.state === currentState)
-  const currentArchetype = findClosestArchetype(scores, currentStateArchetypes)
-
-  // Next step
+  const currentArchetype = findClosestArchetype(scores, ARCHETYPES)
   const nextState = STATE_ORDER[Math.min(currentStateIdx + 1, STATE_ORDER.length - 1)]
-  const nextStateArchetypes = ARCHETYPES.filter(a => a.state === nextState)
-  const nextArchetype = findClosestArchetype(scores, nextStateArchetypes)
-
-  // Future step (2 levels up)
   const futureState = STATE_ORDER[Math.min(currentStateIdx + 2, STATE_ORDER.length - 1)]
-  const futureStateArchetypes = ARCHETYPES.filter(a => a.state === futureState)
-  const futureArchetype = findClosestArchetype(scores, futureStateArchetypes)
 
   const stateDescriptions: Record<EvolutionState, string> = {
     fragmented: 'Scattered and searching. The pieces have not yet found their pattern.',
@@ -200,13 +233,13 @@ function buildEvolutionPathway(
     next: {
       label: 'NEXT HORIZON',
       state: nextState,
-      archetype: nextArchetype,
+      archetype: null,
       description: stateDescriptions[nextState],
     },
     future: {
       label: 'FUTURE STATE',
       state: futureState,
-      archetype: futureArchetype,
+      archetype: null,
       description: stateDescriptions[futureState],
     },
   }
@@ -215,16 +248,25 @@ function buildEvolutionPathway(
 function findClosestArchetype(scores: DimensionScores, pool: Archetype[]): Archetype | null {
   if (pool.length === 0) return null
 
+  // Compare on 0–5 scale to match archetype vectors
+  const norm = {
+    aether: (scores.aether / 100) * 5,
+    fire:   (scores.fire   / 100) * 5,
+    air:    (scores.air    / 100) * 5,
+    water:  (scores.water  / 100) * 5,
+    earth:  (scores.earth  / 100) * 5,
+  }
+
   let closest = pool[0]
   let minDist = Infinity
 
   for (const archetype of pool) {
     const dist = Math.sqrt(
-      Math.pow(scores.aether - archetype.profile.aether, 2) +
-      Math.pow(scores.fire   - archetype.profile.fire,   2) +
-      Math.pow(scores.air    - archetype.profile.air,    2) +
-      Math.pow(scores.water  - archetype.profile.water,  2) +
-      Math.pow(scores.earth  - archetype.profile.earth,  2)
+      Math.pow(norm.aether - archetype.vector.aether, 2) +
+      Math.pow(norm.fire   - archetype.vector.fire,   2) +
+      Math.pow(norm.air    - archetype.vector.air,    2) +
+      Math.pow(norm.water  - archetype.vector.water,  2) +
+      Math.pow(norm.earth  - archetype.vector.earth,  2)
     )
     if (dist < minDist) {
       minDist = dist
@@ -234,6 +276,8 @@ function findClosestArchetype(scores: DimensionScores, pool: Archetype[]): Arche
 
   return closest
 }
+
+// ── Exports for backward compat ──────────────────────────────────────────────
 
 export const STATE_LABELS: Record<EvolutionState, string> = {
   fragmented: 'Fragmented',

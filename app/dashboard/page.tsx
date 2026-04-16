@@ -19,7 +19,6 @@ import type { Dimension }         from '@/lib/assessment/questions'
 import type { ArchetypeBlendRecord, ProfileState } from '@/lib/supabase'
 import type { FullReading }       from '@/lib/persistence/reflections'
 import { ARCHETYPES }             from '@/lib/archetypes/definitions'
-import { getRole }                from '@/lib/canon'
 import type { RoleDefinition }    from '@/lib/types/canon'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -154,9 +153,7 @@ export default function DashboardPage() {
         const primaryArchetype = ARCHETYPES.find(
           a => a.id === (ps.archetype_blend as ArchetypeBlendRecord | null)?.primary_id
         )
-        const canonRole = primaryArchetype
-          ? getRole(primaryArchetype.canonicalRoleId)
-          : null
+        const canonRole: RoleDefinition | null = null // canonicalRoleId removed from Archetype type
 
         setData({
           firstName:          profile?.first_name ?? email!.split('@')[0],

@@ -18,6 +18,7 @@ import type { ResultPayload } from '../types/results'
 import { buildArchetypeBlend } from '../archetypes/matcher'
 import { buildGrowthProfile } from '../pathways/growth'
 import { getBalance } from '../scoring/normalize'
+import type { SignalQuality } from '../scoring/signal'
 
 export interface SavedProfileState {
   id:         string
@@ -256,7 +257,18 @@ export async function fetchAndReconstructPayload(
     energy_sources:    ctx.energy_sources     ?? '',
   }
 
-  return buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, {
+  // Reconstruction from persisted data — signal quality is not stored,
+  // so we provide a neutral fallback.
+  const fallbackSignal: SignalQuality = {
+    confidence: 'moderate',
+    isBalancedSystem: false,
+    isFlatProfile: false,
+    hasInflationBias: false,
+    hasLowVariance: false,
+    flags: [],
+  }
+
+  return buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, fallbackSignal, {
     assessmentId:   (ps.assessment_id  as string | null) ?? null,
     profileStateId: ps.id as string,
   })

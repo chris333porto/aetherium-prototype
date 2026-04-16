@@ -6,6 +6,7 @@ import { scoreAssessment } from '@/lib/scoring/engine'
 import { buildArchetypeBlend } from '@/lib/archetypes/matcher'
 import { buildGrowthProfile } from '@/lib/pathways/growth'
 import { parseNarrativeAnswers } from '@/lib/assessment/narrative'
+import { analyzeSignalQuality } from '@/lib/scoring/signal'
 import { buildResultPayload } from '@/lib/types/results'
 import { saveNarrativeAnswers, markAssessmentComplete, createAssessment } from '@/lib/persistence/assessments'
 import { saveProfileState, saveArchetypeResult } from '@/lib/persistence/profiles'
@@ -201,8 +202,9 @@ async function runScoringAndPersist(): Promise<void> {
 
   // 2. Score deterministically
   const scoring        = scoreAssessment(rawAnswers)
+  const signalQuality  = analyzeSignalQuality(rawAnswers, scoring.dimensions)
   const archetypeBlend = buildArchetypeBlend(scoring.dimensions)
-  const growthProfile  = buildGrowthProfile(scoring.dimensions)
+  const growthProfile  = buildGrowthProfile(scoring.dimensions, archetypeBlend.primary.archetype)
   const narrative      = parseNarrativeAnswers(narrativeRaw)
 
   const entries = Object.entries(scoring.dimensions) as [Dimension, number][]
@@ -210,7 +212,7 @@ async function runScoringAndPersist(): Promise<void> {
   const deficientDimension = entries.reduce((a, b) => b[1] < a[1] ? b : a)[0]
 
   // 3. Build local payload (IDs patched in below if Supabase succeeds)
-  const payload = buildResultPayload(scoring, archetypeBlend, growthProfile, narrative)
+  const payload = buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, signalQuality)
 
   // 4. AI enrichment — this is the FIRST OpenAI call in the entire pre-dashboard flow.
   //    It only runs here, after the user has:

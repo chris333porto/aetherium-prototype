@@ -11,9 +11,10 @@ import type { Dimension } from '../assessment/questions'
 import type { ArchetypeBlend } from '../archetypes/matcher'
 import type { GrowthProfile } from '../pathways/growth'
 import type { NarrativeAnswers } from '../assessment/narrative'
+import type { SignalQuality } from '../scoring/signal'
 
-export const ASSESSMENT_VERSION     = '1.0'
-export const PROFILE_MODEL_VERSION  = '1.0'
+export const ASSESSMENT_VERSION     = '2.0'   // bumped: canon integration
+export const PROFILE_MODEL_VERSION  = '2.0'   // bumped: new matching algorithm
 
 // ── Sub-types ───────────────────────────────────────────────────────────────
 
@@ -34,6 +35,9 @@ export interface ResultPayload {
 
   // ── Raw scoring output ───────────────────────────────────────────────────
   scoring:         ScoringResult
+
+  // ── Signal quality (canon requirement) ──────────────────────────────────
+  signalQuality:   SignalQuality
 
   // ── Convenience top-level unpacks (mirror scoring internals) ────────────
   coherenceScore:  number            // 0–100
@@ -69,6 +73,7 @@ export function buildResultPayload(
   archetypeBlend: ArchetypeBlend,
   growthProfile:  GrowthProfile,
   narrative:      NarrativeAnswers,
+  signalQuality:  SignalQuality,
   options?: {
     assessmentId?:   string | null
     profileStateId?: string | null
@@ -102,6 +107,7 @@ export function buildResultPayload(
     profileStateId: options?.profileStateId ?? null,
 
     scoring,
+    signalQuality,
     coherenceScore:  scoring.coherenceScore,
     overallScore:    scoring.overallScore,
 
