@@ -14,6 +14,7 @@ import { buildArchetypeBlend } from '@/lib/archetypes/matcher'
 import { buildGrowthProfile } from '@/lib/pathways/growth'
 import type { ScoringResult } from '@/lib/scoring/engine'
 import type { NarrativeAnswers } from '@/lib/assessment/narrative'
+import type { SignalQuality } from '@/lib/scoring/signal'
 
 // ─── Scores ──────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,17 @@ const PREVIEW_NARRATIVE: NarrativeAnswers = {
     'Long uninterrupted mornings. Conversations with people who think carefully. Reading that challenges assumptions.',
 }
 
+// ─── Signal quality mock ─────────────────────────────────────────────────────
+
+const PREVIEW_SIGNAL: SignalQuality = {
+  confidence: 'high',
+  isBalancedSystem: false,
+  isFlatProfile: false,
+  hasInflationBias: false,
+  hasLowVariance: false,
+  flags: [],
+}
+
 // ─── Full payload (built with real engines) ───────────────────────────────────
 
 export const PREVIEW_RESULT = buildResultPayload(
@@ -70,6 +82,7 @@ export const PREVIEW_RESULT = buildResultPayload(
   buildArchetypeBlend(PREVIEW_SCORES),
   buildGrowthProfile(PREVIEW_SCORES),
   PREVIEW_NARRATIVE,
+  PREVIEW_SIGNAL,
 )
 
 // ─── Pre-filled assessment answers (all 50 questions) ────────────────────────

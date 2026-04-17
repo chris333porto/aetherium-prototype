@@ -105,11 +105,11 @@ export default function LandingPage() {
         </p>
 
         <div className="hero-cta-wrap">
-          <Link href="/onboarding/welcome" className="cta-hero">Begin Your Journey</Link>
+          <Link href="/onboarding/welcome" className="cta-hero">Begin Self Discovery</Link>
         </div>
 
         <p className="hero-time">
-          <span>Free</span> &nbsp;·&nbsp; ~10 minutes &nbsp;·&nbsp; No account required &nbsp;·&nbsp; Your profile evolves with you
+          <span>Free</span> &nbsp;·&nbsp; ~5–7 minutes &nbsp;·&nbsp; No account required &nbsp;·&nbsp; Your profile evolves with you
         </p>
 
         <div className="scroll-hint">
@@ -509,7 +509,7 @@ export default function LandingPage() {
           </div>
           <p className="av-label">This is the visual expression of your current state.</p>
           <p className="av-q">What does yours look like?</p>
-          <p className="av-note">Your Aetherium Avatar is generated uniquely from your profile — visible immediately after you complete the assessment.</p>
+          <p className="av-note">Your Aetherium Avatar is generated uniquely from your profile — visible immediately after you complete your discovery.</p>
         </div>
       </ScrollReveal>
 
@@ -607,9 +607,9 @@ export default function LandingPage() {
           <p className="final-sub">
             Know yourself. Map your life. Move with intention.
           </p>
-          <Link href="/onboarding/welcome" className="cta-hero">Begin Your Journey</Link>
+          <Link href="/onboarding/welcome" className="cta-hero">Begin Self Discovery</Link>
           <p className="final-note">
-            <span>Free</span> &nbsp;·&nbsp; ~10 minutes &nbsp;·&nbsp; Instant results &nbsp;·&nbsp;{' '}
+            <span>Free</span> &nbsp;·&nbsp; ~5–7 minutes &nbsp;·&nbsp; Instant results &nbsp;·&nbsp;{' '}
             <span>No account required</span>
           </p>
         </div>

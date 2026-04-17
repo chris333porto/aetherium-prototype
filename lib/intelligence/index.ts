@@ -121,6 +121,14 @@ export function deriveTodayAlignment(data: ResultPayload): AlignmentAction[] {
   const edgeDim = data.growthProfile.growthEdge.dimension
   const domDim  = data.dominantDimension
 
+  if (!edgeDim) {
+    return [
+      { slot: 'Morning',     action: MORNING_ACTIONS[domDim],  dimension: domDim, priority: 'critical'  },
+      { slot: 'Focus Block', action: FOCUS_ACTIONS[domDim],    dimension: domDim, priority: 'important' },
+      { slot: 'Evening',     action: EVENING_ACTIONS[domDim],  dimension: domDim, priority: 'maintain'  },
+    ]
+  }
+
   const sorted = (Object.keys(dims) as Dimension[])
     .map(d => ({ dim: d, score: dims[d] }))
     .sort((a, b) => a.score - b.score)
@@ -183,10 +191,21 @@ export function deriveImbalanceInsight(data: ResultPayload): ImbalanceInsight {
   const { dominantDimension, scoring }  = data
   const edgeDim   = data.growthProfile.growthEdge.dimension
   const domScore  = scoring.dimensions[dominantDimension]
+  const domLabel  = DIMENSION_META[dominantDimension].label
+
+  if (!edgeDim) {
+    return {
+      headline:     `${domLabel} is your dominant force`,
+      gap:          0,
+      body:         `No single growth edge identified — your system is relatively balanced.`,
+      behavioral:   'No clear imbalance pattern detected.',
+      intervention: EDGE_INTERVENTIONS[dominantDimension],
+    }
+  }
+
   const edgeScore = scoring.dimensions[edgeDim]
   const gap       = domScore - edgeScore
 
-  const domLabel  = DIMENSION_META[dominantDimension].label
   const edgeLabel = DIMENSION_META[edgeDim].label
 
   const behavioral =

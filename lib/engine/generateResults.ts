@@ -1,10 +1,35 @@
 import 'server-only'
 import { openai } from '@/lib/openai'
 
-// ─── Input ────────────────────────────────────────────────────────────────────
+/**
+ * generateResults.ts — CANON-AWARE ASSESSMENT INTERPRETATION ENGINE
+ *
+ * This engine enriches the deterministic assessment output with AI-generated
+ * contextual interpretation. It does NOT determine archetype, shadow, growth
+ * edge, or dimension scores — those are already computed deterministically
+ * by the scoring engine and archetype matcher.
+ *
+ * What it DOES:
+ *   - Detect Life Chapter (from canon: 12 chapters)
+ *   - Detect Meaning Level (from canon: 7 levels)
+ *   - Assess Flow Conditions (from canon: 4 conditions)
+ *   - Assess Calling Orientation (from canon: 4 aims)
+ *   - Generate a contextual tension statement grounded in narrative
+ *   - Generate 1–3 specific practices informed by narrative context
+ *   - Generate a dashboard focus (today/this_week/watch_out_for)
+ *   - Generate a reflection question to begin the daily practice
+ *
+ * What it receives as CONTEXT (already determined, not re-derived):
+ *   - Dimension scores
+ *   - Matched archetype name + category + growth edge + shadow trigger
+ *   - Signal quality
+ *   - Narrative responses from the user
+ */
+
+// ─── Input ───────────────────────────────────────────────────────────────────
 
 export interface GenerateResultsInput {
-  userId:         string
+  // Deterministic outputs (passed as context, NOT to be re-derived)
   dimensionScores: {
     aether: number
     fire:   number
@@ -12,102 +37,122 @@ export interface GenerateResultsInput {
     water:  number
     earth:  number
   }
-  past:        string
-  present:     string
-  future:      string
-  values?:     string[]
-  reflections?: string[]
+  dominantDimension:   string
+  deficientDimension:  string
+  overallScore:        number
+  coherenceScore:      number
+
+  // Archetype context (already matched deterministically)
+  archetypeName:       string   // e.g. "The Strategist"
+  archetypeCategory:   string   // core | expansion | shadow | transcendent
+  growthEdge:          string   // e.g. "Act (Earth)"
+  shadowTrigger:       string   // e.g. "Overthinking"
+
+  // Signal quality
+  signalConfidence:    string   // high | moderate | low
+  isBalancedSystem:    boolean
+
+  // Narrative context from user
+  past:    string              // recent challenges
+  present: string              // recurring pattern / current state
+  future:  string              // desired direction
 }
 
-// ─── Output ───────────────────────────────────────────────────────────────────
+// ─── Output (canon-aligned) ──────────────────────────────────────────────────
 
-export type DimensionKey = 'aether' | 'fire' | 'air' | 'water' | 'earth'
+export type LifeChapterId =
+  | 'initiation' | 'expansion' | 'stability' | 'plateau'
+  | 'transition' | 'disruption' | 'contraction' | 'reconstruction'
+  | 'integration' | 'emergence' | 'overload' | 'renewal'
 
-export type JourneyPhase =
-  | 'Dormancy'
-  | 'Awakening'
-  | 'Initiation'
-  | 'Confrontation'
-  | 'Expansion'
-  | 'Integration'
-  | 'Mastery'
-  | 'Contribution'
+export type MeaningLevelId =
+  | 'survival' | 'desire' | 'belonging' | 'achievement'
+  | 'awakening' | 'integration_meaning' | 'transcendence'
 
-export interface DimensionState {
-  score:       number   // 0–100 (echoed from input for self-containedness)
-  state:       'blocked' | 'underactive' | 'balanced' | 'strong' | 'dominant'
-  interpretation: string  // one precise sentence
+export interface FlowSnapshot {
+  activation:    number  // 1–10
+  alignment:     number  // 1–10
+  attunement:    number  // 1–10
+  attentiveness: number  // 1–10
 }
 
-export interface NextPractice {
+export interface CallingSnapshot {
+  connection:   number   // 1–10
+  contribution: number   // 1–10
+  creativity:   number   // 1–10
+  capability:   number   // 1–10
+}
+
+export interface ContextualPractice {
   title:            string
   why:              string
-  dimension_target: DimensionKey
+  dimension_target: string
 }
 
 export interface DashboardFocus {
-  today:        string   // single highest-leverage action
-  this_week:    string   // directional theme for the week
-  watch_out_for: string  // the most likely trap / shadow pattern to surface
+  today:         string
+  this_week:     string
+  watch_out_for: string
 }
 
-export interface AetheriumResults {
-  dimension_states:         Record<DimensionKey, DimensionState>
-  strongest_dimension:      DimensionKey
-  weakest_dimension:        DimensionKey
-  coherence_score:          number        // 0–100
-  journey_phase:            JourneyPhase
-  primary_mode_of_being:    string        // archetype name, e.g. "Visionary"
-  secondary_mode_of_being:  string        // archetype name
-  shadow_pattern:           string        // archetype name (shadow category)
-  values:                   string[]      // 3–5 core values derived from input
-  tension_statement:        string        // single mirror sentence
-  growth_edge:              string        // specific dimension + what it unlocks
-  next_practices:           NextPractice[]  // 3 practices
-  dashboard_focus:          DashboardFocus
+export interface CanonEnrichment {
+  life_chapter:            LifeChapterId
+  life_chapter_confidence: 'low' | 'medium' | 'high'
+  life_chapter_explanation: string
+
+  meaning_level:            MeaningLevelId
+  meaning_level_confidence: 'low' | 'medium' | 'high'
+  meaning_level_explanation: string
+
+  flow_snapshot:      FlowSnapshot
+  calling_snapshot:   CallingSnapshot
+
+  tension_statement:  string      // contextual, grounded in narrative
+  next_practices:     ContextualPractice[]
+  dashboard_focus:    DashboardFocus
+  reflection_question: string     // one question for first reflection
 }
 
-// ─── JSON Schema (structured output contract) ─────────────────────────────────
-
-const DIMENSION_STATE_SCHEMA = {
-  type: 'object',
-  properties: {
-    score:          { type: 'number' },
-    state:          { type: 'string', enum: ['blocked', 'underactive', 'balanced', 'strong', 'dominant'] },
-    interpretation: { type: 'string' },
-  },
-  required:             ['score', 'state', 'interpretation'],
-  additionalProperties: false,
-} as const
+// ─── JSON Schema ─────────────────────────────────────────────────────────────
 
 const OUTPUT_SCHEMA = {
   type: 'object',
   properties: {
-    dimension_states: {
+    life_chapter:             { type: 'string', enum: ['initiation','expansion','stability','plateau','transition','disruption','contraction','reconstruction','integration','emergence','overload','renewal'] },
+    life_chapter_confidence:  { type: 'string', enum: ['low','medium','high'] },
+    life_chapter_explanation: { type: 'string' },
+
+    meaning_level:             { type: 'string', enum: ['survival','desire','belonging','achievement','awakening','integration_meaning','transcendence'] },
+    meaning_level_confidence:  { type: 'string', enum: ['low','medium','high'] },
+    meaning_level_explanation: { type: 'string' },
+
+    flow_snapshot: {
       type: 'object',
       properties: {
-        aether: DIMENSION_STATE_SCHEMA,
-        fire:   DIMENSION_STATE_SCHEMA,
-        air:    DIMENSION_STATE_SCHEMA,
-        water:  DIMENSION_STATE_SCHEMA,
-        earth:  DIMENSION_STATE_SCHEMA,
+        activation:    { type: 'number' },
+        alignment:     { type: 'number' },
+        attunement:    { type: 'number' },
+        attentiveness: { type: 'number' },
       },
-      required:             ['aether', 'fire', 'air', 'water', 'earth'],
+      required: ['activation','alignment','attunement','attentiveness'],
       additionalProperties: false,
     },
-    strongest_dimension:     { type: 'string', enum: ['aether', 'fire', 'air', 'water', 'earth'] },
-    weakest_dimension:       { type: 'string', enum: ['aether', 'fire', 'air', 'water', 'earth'] },
-    coherence_score:         { type: 'number' },
-    journey_phase: {
-      type: 'string',
-      enum: ['Dormancy', 'Awakening', 'Initiation', 'Confrontation', 'Expansion', 'Integration', 'Mastery', 'Contribution'],
+
+    calling_snapshot: {
+      type: 'object',
+      properties: {
+        connection:   { type: 'number' },
+        contribution: { type: 'number' },
+        creativity:   { type: 'number' },
+        capability:   { type: 'number' },
+      },
+      required: ['connection','contribution','creativity','capability'],
+      additionalProperties: false,
     },
-    primary_mode_of_being:   { type: 'string' },
-    secondary_mode_of_being: { type: 'string' },
-    shadow_pattern:          { type: 'string' },
-    values:                  { type: 'array', items: { type: 'string' } },
-    tension_statement:       { type: 'string' },
-    growth_edge:             { type: 'string' },
+
+    tension_statement:   { type: 'string' },
+    reflection_question: { type: 'string' },
+
     next_practices: {
       type: 'array',
       items: {
@@ -115,12 +160,13 @@ const OUTPUT_SCHEMA = {
         properties: {
           title:            { type: 'string' },
           why:              { type: 'string' },
-          dimension_target: { type: 'string', enum: ['aether', 'fire', 'air', 'water', 'earth'] },
+          dimension_target: { type: 'string', enum: ['aether','fire','air','water','earth'] },
         },
-        required:             ['title', 'why', 'dimension_target'],
+        required: ['title','why','dimension_target'],
         additionalProperties: false,
       },
     },
+
     dashboard_focus: {
       type: 'object',
       properties: {
@@ -128,189 +174,148 @@ const OUTPUT_SCHEMA = {
         this_week:     { type: 'string' },
         watch_out_for: { type: 'string' },
       },
-      required:             ['today', 'this_week', 'watch_out_for'],
+      required: ['today','this_week','watch_out_for'],
       additionalProperties: false,
     },
   },
   required: [
-    'dimension_states',
-    'strongest_dimension',
-    'weakest_dimension',
-    'coherence_score',
-    'journey_phase',
-    'primary_mode_of_being',
-    'secondary_mode_of_being',
-    'shadow_pattern',
-    'values',
-    'tension_statement',
-    'growth_edge',
-    'next_practices',
-    'dashboard_focus',
+    'life_chapter','life_chapter_confidence','life_chapter_explanation',
+    'meaning_level','meaning_level_confidence','meaning_level_explanation',
+    'flow_snapshot','calling_snapshot',
+    'tension_statement','reflection_question',
+    'next_practices','dashboard_focus',
   ],
   additionalProperties: false,
 } as const
 
-// ─── Prompt builders ──────────────────────────────────────────────────────────
+// ─── Prompt builders ─────────────────────────────────────────────────────────
 
 function buildSystemPrompt(): string {
-  return `You are the Aetherium Intelligence Engine — a precision self-knowledge system.
+  return `You are the Aetherium Intelligence Engine — a canon-aware interpretation system.
 
-## THE AETHERIUM SYSTEM
+You are given a person's assessment results (dimension scores, matched archetype, growth edge, shadow trigger). These are ALREADY DETERMINED. Do not re-derive them.
 
-Aetherium maps human potential across five elemental dimensions, each representing a core force of expression:
+Your job is to enrich the profile with contextual interpretation using four canonical frameworks:
 
-| Dimension | Force       | What it governs |
-|-----------|-------------|-----------------|
-| Aether    | Intention   | Purpose, vision, meaning, the deep "why" |
-| Fire      | Volition    | Will, drive, decisiveness, initiation |
-| Air       | Cognition   | Thinking, analysis, clarity, pattern recognition |
-| Water     | Emotion     | Feeling, connection, regulation, empathy |
-| Earth     | Action      | Follow-through, consistency, embodiment, completion |
+## 1. LIFE CHAPTERS (12 terrains — cyclical, not linear)
 
-Each dimension is scored 0–100 and classified:
-- 0–20   → blocked (suppressed, inaccessible)
-- 21–40  → underactive (present but unreliable)
-- 41–60  → balanced (functioning, not yet sharp)
-- 61–80  → strong (reliable and expressed)
-- 81–100 → dominant (the primary organizing force)
+Detect which chapter the person is currently in based on their narrative context:
 
-Coherence (0–100) measures internal harmony across all five. High coherence = integrated system. Low coherence = fragmented or polarized expression.
+| Chapter | Essence | Core Risk |
+|---------|---------|-----------|
+| Initiation | Beginning something new | Waiting for certainty |
+| Expansion | Momentum rising | Overextension |
+| Stability | Maintaining structure | Stagnation |
+| Plateau | Flat progress, hidden growth | Mistaking invisibility for failure |
+| Transition | Between identities | Forcing premature certainty |
+| Disruption | Shock, crisis, rupture | Rigid resistance |
+| Contraction | Inward pull, grief, slowdown | Believing it is permanent |
+| Reconstruction | Rebuilding after collapse | Rebuilding too fast |
+| Integration | Making sense of experience | Endless processing |
+| Emergence | New pattern coming online | Protecting the old self |
+| Overload | Too many demands | Burnout |
+| Renewal | Vitality returning | Staying passive too long |
 
-## JOURNEY PHASES (8-stage arc)
+Chapters are NOT developmental stages. A person may revisit any chapter multiple times. Base detection on narrative signals, not on scores alone.
 
-Every person is at a specific developmental phase. Read the dimension scores AND the narrative to determine the phase accurately:
+## 2. SEVEN LEVELS OF MEANING (value structures)
 
-1. **Dormancy** — No clear signal. Low across most dimensions. Not yet awake to potential.
-2. **Awakening** — One or two dimensions beginning to activate. New awareness opening.
-3. **Initiation** — Entering the work consciously. Friction beginning. At least one strong dimension.
-4. **Confrontation** — Facing core shadow or imbalance directly. High tension between dimensions.
-5. **Expansion** — Actively developing. Multiple dimensions rising. Growth is visible and felt.
-6. **Integration** — Bringing previously separate dimensions into alignment. Coherence building.
-7. **Mastery** — Deep fluency across most dimensions. Expressing from a stable, refined center.
-8. **Contribution** — Beyond self-optimization. Living from wholeness and serving beyond the self.
+Detect the dominant meaning-making lens:
 
-## ROLES (CANONICAL 32)
+| Level | Core Orientation | Identity Logic |
+|-------|-----------------|----------------|
+| Survival | Safety | "I need to stay safe" |
+| Desire | Pleasure/Identity | "I am what I pursue" |
+| Belonging | Relationship | "I am loved, therefore I am" |
+| Achievement | Mastery/Results | "I am what I accomplish" |
+| Awakening | Truth/Awareness | "I seek what is true" |
+| Integration | Wholeness/Systems | "I seek to make the whole work" |
+| Transcendence | Service/Devotion | "I am here to serve something larger" |
 
-Roles are not identity labels — they are current modes of expression, contribution, and responsibility. They can and do change.
+Different life domains may operate from different levels simultaneously. Base detection on values expressed in narrative, not assumed from scores.
 
-Use these exact role names — no others. Select one primary role, one secondary role, and one shadow role.
+## 3. FOUR CONDITIONS FOR FLOW (operating state)
 
-Fire — Expression, courage, initiation, signal:
-Warrior, Creator, Performer, Storyteller, Visionary, Igniter
+Rate each condition 1–10 based on the full picture (scores + narrative):
 
-Water — Care, regulation, belonging, repair:
-Healer, Guide, Mediator, Partner, Advocate, Anchor
+| Condition | What it means |
+|-----------|---------------|
+| Activation | Energy converted into motion. Willingness to begin. |
+| Alignment | Values, priorities, and direction are congruent. |
+| Attunement | Sensitive connection to reality, timing, self, others. |
+| Attentiveness | Stable presence directed toward what matters. |
 
-Earth — Structure, execution, craft, stewardship:
-Builder, Operator, Maker, Engineer, Organizer, Steward
+## 4. FOUR AIMS OF CALLING (energy direction)
 
-Air — Thought, clarity, research, orientation:
-Strategist, Analyst, Researcher, Teacher, Advisor, Navigator
+Rate each aim 1–10 based on what the person is currently oriented toward:
 
-Aether — Integration, architecture, leadership, transformation:
-Leader, Orchestrator, Architect, Connector, Catalyst, Alchemist
+| Aim | Essence |
+|-----|---------|
+| Connection | Relationship, resonance, belonging |
+| Contribution | Service, usefulness, impact |
+| Creativity | Expression, originality, bringing forth the new |
+| Capability | Mastery, competence, discipline |
 
-Meta (cross-domain):
-Explorer, Founder
+## INTERPRETATION MANDATE
 
-The shadow role is a distortion or suppression of an existing pattern — name the role that is being expressed in a broken or avoidant way.
-
-Canonical language: "Your dominant role right now is [Role]." — never "You are permanently a [Role]."
-
-Select by matching dimension score profile AND narrative context together.
-
-## NARRATIVE FIELD INTERPRETATION
-
-When narrative context is provided, use it precisely. Do not summarize it — extract signal from it.
-
-**Pattern analysis** (recurring_pattern + avoidance):
-- The recurring_pattern reveals the user's most persistent internal obstacle.
-- Avoidance reveals what they already know but aren't doing.
-- Together, these define the true growth edge — not the obvious one, the real one.
-- Both fields should inform shadow_pattern and growth_edge.
-
-**Tension analysis** (recent_challenges + environment):
-- recent_challenges names what isn't working on the surface.
-- environment names what the person is structurally embedded in — their actual demands and constraints.
-- The tension between these two is often the core friction. It should appear in tension_statement.
-
-**Direction extraction** (desired_direction + deeper_pull):
-- desired_direction is the stated aspiration — often a plan or outcome.
-- deeper_pull is the underlying need — a quality of experience or being.
-- The gap between them (if present) is psychologically important. Reflect it in journey_phase and next_practices.
-
-**Energy contextualization** (energy_state + energy_sources):
-- energy_state (Scattered/Stuck/Stable/Focused/Driven) is the user's own classification of their current system.
-- energy_sources reveal what is already working — use these to anchor at least one next_practice in something accessible.
-- A user who is Scattered needs consolidation practices. Stuck needs activation. Stable needs expansion. Focused needs deepening. Driven needs integration.
-
-## TONE AND MANDATE
-
-- Be precise and grounded. No vague spiritual language.
-- Focus on growth trajectory, not fixed identity.
-- The tension_statement should feel like a mirror — true enough to be uncomfortable.
-- Practices must be specific, actionable, and tied to a real dimension gap.
-- dashboard_focus.today must be a single concrete action, not a theme.
-- All interpretations should reflect what is true right now, and what is becoming possible next.
-- When narrative fields are present, interpretations must reference them — not in generic terms, but through the actual content the user provided.`
+- The archetype, shadow, growth edge, and scores are GIVEN. Do not contradict them.
+- The tension_statement must be grounded in the narrative, not generic.
+- Practices must be specific and actionable — tied to the person's actual situation.
+- dashboard_focus.today must be a single concrete action.
+- The reflection_question should open what most needs to be seen.
+- Be precise. No vague spiritual language. No flattery.`
 }
 
 function buildUserPrompt(input: GenerateResultsInput): string {
-  const scores = input.dimensionScores
+  return `Interpret this person's assessment results using the four canonical frameworks.
 
-  // Split reflections: first 3 are past/present/future echoes; the rest are
-  // the extended narrative fields passed as labeled strings from payload.ts.
-  const allReflections = input.reflections ?? []
-  const extendedContext = allReflections.slice(3) // Environment, Recurring pattern, Avoidance, Deeper pull, Current energy, Energy sources
+## DETERMINISTIC RESULTS (already computed — do not change)
 
-  const valuesLine = input.values?.length
-    ? `\nCore values (self-reported): ${input.values.join(', ')}`
-    : ''
-
-  const extendedBlock = extendedContext.length > 0
-    ? `\n## EXTENDED CONTEXT\n${extendedContext.map(r => `${r}`).join('\n')}`
-    : ''
-
-  return `Analyze this person and generate their Aetherium intelligence profile.
+Archetype: ${input.archetypeName}
+Category: ${input.archetypeCategory}
+Growth Edge: ${input.growthEdge}
+Shadow Trigger: ${input.shadowTrigger}
 
 ## DIMENSION SCORES
-Earth  (Action):    ${scores.earth}/100
-Water  (Emotion):   ${scores.water}/100
-Air    (Cognition): ${scores.air}/100
-Fire   (Volition):  ${scores.fire}/100
-Aether (Intention): ${scores.aether}/100
+Spirit  (Intention): ${input.dimensionScores.aether}/100
+Soul    (Volition):  ${input.dimensionScores.fire}/100
+Mind    (Cognition): ${input.dimensionScores.air}/100
+Heart   (Emotion):   ${input.dimensionScores.water}/100
+Body    (Execution): ${input.dimensionScores.earth}/100
+
+Overall: ${input.overallScore}/100
+Coherence: ${input.coherenceScore}/100
+Dominant: ${input.dominantDimension}
+Deficient: ${input.deficientDimension}
+Signal confidence: ${input.signalConfidence}
+Balanced system: ${input.isBalancedSystem}
 
 ## NARRATIVE CONTEXT
-What's been happening (recent challenges): ${input.past || '(not provided)'}
-Current life phase (where they are now):   ${input.present || '(not provided)'}
-Where they want to go (desired direction): ${input.future || '(not provided)'}
-${valuesLine}${extendedBlock}
+Recent challenges: ${input.past || '(not provided)'}
+Current situation: ${input.present || '(not provided)'}
+Desired direction: ${input.future || '(not provided)'}
 
-## INTERPRETATION INSTRUCTIONS
+## INSTRUCTIONS
 
-1. **tension_statement**: Name the specific friction between their scores AND their narrative. If recurring_pattern and avoidance are present, use them — they reveal the real gap, not the obvious one. Write one precise sentence that would feel true enough to be uncomfortable.
+1. Detect **Life Chapter** from the narrative signals. If narrative is thin, use low confidence.
+2. Detect **Meaning Level** from the values expressed. Default to achievement if unclear.
+3. Rate **Flow Conditions** (1–10 each) from the full picture.
+4. Rate **Calling Aims** (1–10 each) from what the person is oriented toward.
+5. Write a **tension_statement** that names the specific friction this person is living — grounded in their narrative, not generic.
+6. Write 1–3 **next_practices** that are specific, actionable, and tied to their growth edge and narrative context.
+7. Write **dashboard_focus** with a concrete today action, a weekly theme, and the shadow pattern to watch for.
+8. Write one **reflection_question** that opens what most needs to be seen for this person.
 
-2. **growth_edge**: Identify the specific dimension that, if developed, would most unlock movement given their current phase, energy state, and avoidance pattern. Name what it unlocks.
-
-3. **dashboard_focus**:
-   - today: One concrete action grounded in their energy sources and strongest dimension.
-   - this_week: A directional theme that addresses the friction in their narrative.
-   - watch_out_for: The shadow pattern most likely to surface given their recurring_pattern and current energy.
-
-4. **next_practices**: Ground at least one practice in their energy sources (something already working). Address the gap between desired_direction and deeper_pull if both are present.
-
-5. **journey_phase**: Determine from the full picture — scores AND narrative. A high-scoring profile with significant avoidance and stuck energy may be in Confrontation, not Integration.
-
-Generate the complete Aetherium results profile. Every field must reflect the specific person above — not a generic archetype.`
+Every output must reflect THIS person — not a generic profile.`
 }
 
-// ─── Main function ────────────────────────────────────────────────────────────
+// ─── Main function ───────────────────────────────────────────────────────────
 
 export async function generateAetheriumResults(
   input: GenerateResultsInput
-): Promise<AetheriumResults> {
+): Promise<CanonEnrichment> {
   const response = await openai.chat.completions.create({
-    model: 'gpt-5.4',
+    model: 'gpt-4o',
     messages: [
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user',   content: buildUserPrompt(input) },
@@ -318,12 +323,12 @@ export async function generateAetheriumResults(
     response_format: {
       type: 'json_schema',
       json_schema: {
-        name:   'aetherium_results',
+        name:   'aetherium_canon_enrichment',
         strict: true,
         schema: OUTPUT_SCHEMA,
       },
     },
-    temperature: 0.4,  // precise, not creative
+    temperature: 0.4,
   })
 
   const raw = response.choices[0]?.message?.content
@@ -331,38 +336,34 @@ export async function generateAetheriumResults(
     throw new Error('generateAetheriumResults: no content returned from model')
   }
 
-  let parsed: AetheriumResults
+  let parsed: CanonEnrichment
   try {
-    parsed = JSON.parse(raw) as AetheriumResults
+    parsed = JSON.parse(raw) as CanonEnrichment
   } catch {
     throw new Error(
-      `generateAetheriumResults: model returned non-JSON content — ${raw.slice(0, 120)}`
+      `generateAetheriumResults: model returned non-JSON — ${raw.slice(0, 120)}`
     )
   }
 
-  // Runtime structural guard — catch partial / malformed responses early
-  const REQUIRED_KEYS: (keyof AetheriumResults)[] = [
-    'dimension_states',
-    'strongest_dimension',
-    'weakest_dimension',
-    'coherence_score',
-    'journey_phase',
-    'primary_mode_of_being',
-    'secondary_mode_of_being',
-    'shadow_pattern',
-    'values',
-    'tension_statement',
-    'growth_edge',
-    'next_practices',
-    'dashboard_focus',
+  // Runtime guard
+  const REQUIRED: (keyof CanonEnrichment)[] = [
+    'life_chapter', 'life_chapter_confidence', 'life_chapter_explanation',
+    'meaning_level', 'meaning_level_confidence', 'meaning_level_explanation',
+    'flow_snapshot', 'calling_snapshot',
+    'tension_statement', 'reflection_question',
+    'next_practices', 'dashboard_focus',
   ]
 
-  const missing = REQUIRED_KEYS.filter(k => !(k in parsed))
+  const missing = REQUIRED.filter(k => !(k in parsed))
   if (missing.length > 0) {
     throw new Error(
-      `generateAetheriumResults: parsed response missing required fields: ${missing.join(', ')}`
+      `generateAetheriumResults: missing fields: ${missing.join(', ')}`
     )
   }
 
   return parsed
 }
+
+// ─── Re-export types for consumers ───────────────────────────────────────────
+
+export type { GenerateResultsInput as CanonEnrichmentInput }

@@ -37,7 +37,7 @@ import { getDimensionInterpretation }   from '@/lib/scoring/engine'
 import { STATE_LABELS }                 from '@/lib/pathways/growth'
 import type { ResultPayload }           from '@/lib/types/results'
 import { fetchAndReconstructPayload, saveProfileRecord } from '@/lib/persistence/profiles'
-import { getRole }                                       from '@/lib/canon'
+// getRole import removed — canonicalRoleId no longer exists on Archetype
 import { PreviewNav }                   from '@/components/dev/PreviewNav'
 import {
   PREVIEW_RESULT,
@@ -254,9 +254,9 @@ function ImbalancePanel({ data }: { data: ResultsData }) {
   const domDim    = data.dominantDimension
   const edgeDim   = data.growthProfile.growthEdge.dimension
   const domMeta   = DIMENSION_META[domDim]
-  const edgeMeta  = DIMENSION_META[edgeDim]
+  const edgeMeta  = edgeDim ? DIMENSION_META[edgeDim] : domMeta
   const domScore  = data.scoring.dimensions[domDim]
-  const edgeScore = data.scoring.dimensions[edgeDim]
+  const edgeScore = edgeDim ? data.scoring.dimensions[edgeDim] : 0
 
   return (
     <div style={{ border: '1px solid rgba(224,90,58,0.12)', borderRadius: 4, background: 'rgba(224,90,58,0.025)', overflow: 'hidden' }}>
@@ -517,7 +517,7 @@ function ArchetypeDerivationPanel({ data }: { data: ResultsData }) {
                       {DIMENSIONS_ORDER.map(d => {
                         const meta     = DIMENSION_META[d]
                         const userVal  = dims[d]
-                        const archVal  = arch.profile[d]
+                        const archVal  = arch.vector[d]
                         const delta    = userVal - archVal
                         return (
                           <span key={d} style={{
@@ -876,15 +876,22 @@ country: id.location?.country || '',
 
   // ── Destructure ─────────────────────────────────────────────────────────
 
-  const { scoring, archetypeBlend, growthProfile, dominantDimension } = data
+  const { scoring, archetypeBlend, growthProfile, dominantDimension, signalQuality } = data
   const { dimensions, profiles, coherenceScore }                       = scoring
   const { primary, secondary, tertiary, shadow, blendTitle }           = archetypeBlend
   const { growthEdge, evolutionPathway, practices }                    = growthProfile
 
-  const tensionText         = getTension(dominantDimension, growthEdge.dimension)
+  const tensionText         = getTension(dominantDimension, growthEdge.dimension ?? dominantDimension)
   const dominantColor       = DIMENSION_META[dominantDimension].color
-  const edgeColor           = DIMENSION_META[growthEdge.dimension].color
-  const primaryCanonRole    = getRole(primary.archetype.canonicalRoleId)
+  const edgeColor           = growthEdge.dimension ? DIMENSION_META[growthEdge.dimension].color : dominantColor
+
+  // Signal quality: balanced system + low confidence = dedicated mode
+  const isBalancedLowSignal = signalQuality?.isBalancedSystem && signalQuality?.confidence === 'low'
+  // Shadow-as-primary: use compassion register
+  const isShadowPrimary     = primary.archetype.category === 'shadow'
+  const mirrorStatement     = isShadowPrimary && primary.archetype.whenPrimary
+    ? primary.archetype.whenPrimary
+    : primary.archetype.aiOutput
 
   const W = 900
 
@@ -919,40 +926,44 @@ country: id.location?.country || '',
         ══════════════════════════════════════════════════════════════════ */}
         <SectionLabel n="01" color={dominantColor}>Identity</SectionLabel>
 
+        {/* ── Balanced / Low Signal Mode ──────────────────────────────── */}
+        {isBalancedLowSignal && (
+          <div style={{
+            padding: '1.8rem 2rem', marginBottom: '2.5rem',
+            border: '1px solid rgba(149,144,236,0.12)', borderRadius: 4,
+            background: 'rgba(149,144,236,0.03)',
+          }}>
+            <p style={{ fontFamily: "'Cinzel', serif", fontSize: 8, letterSpacing: '0.42em', textTransform: 'uppercase', color: 'rgba(149,144,236,0.5)', marginBottom: 14 }}>
+              Balanced System Detected
+            </p>
+            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 17, color: 'rgba(234,232,242,0.55)', lineHeight: 1.7, marginBottom: 12 }}>
+              Your five dimensions are closely balanced. This may reflect genuine equilibrium — or it may mean the assessment did not fully capture the range of your experience.
+            </p>
+            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, color: 'rgba(234,232,242,0.38)', lineHeight: 1.7 }}>
+              The archetype below is approximate. For sharper resolution, consider retaking after a week of deliberate self-observation — notice where energy flows easily and where it stalls.
+            </p>
+          </div>
+        )}
+
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 13, letterSpacing: '0.32em', textTransform: 'uppercase', color: 'rgba(234,232,242,0.28)', marginBottom: '1.5rem' }}>
-          You are currently expressing as:
+          You are currently operating as:
         </p>
 
         <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(50px, 8.5vw, 94px)', fontWeight: 300, color: '#eae8f2', letterSpacing: '-0.025em', lineHeight: 1.0, marginBottom: '1rem' }}>
           {blendTitle}
         </h1>
 
-        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(17px, 2.2vw, 22px)', fontStyle: 'italic', color: `${dominantColor}b0`, marginBottom: '2rem', lineHeight: 1.45 }}>
-          {primary.archetype.tagline}
+        {/* When Aligned — what this looks like at its best */}
+        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(17px, 2.2vw, 22px)', color: `${dominantColor}b0`, marginBottom: '0.8rem', lineHeight: 1.55 }}>
+          {primary.archetype.whenAligned}
         </p>
 
-        {/* Operating Role (canon) */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: '3.5rem' }}>
-          <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.42em', textTransform: 'uppercase', color: 'rgba(234,232,242,0.22)', flexShrink: 0 }}>
-            Operating Role
-          </span>
-          <div style={{ width: 16, height: 1, background: 'rgba(234,232,242,0.07)', flexShrink: 0, alignSelf: 'center' }} />
-          <span style={{
-            fontFamily:    "'Cinzel', serif",
-            fontSize:      9,
-            letterSpacing: '0.28em',
-            textTransform: 'uppercase',
-            color:         dominantColor,
-            padding:       '3px 10px',
-            border:        `1px solid ${dominantColor}30`,
-            borderRadius:  3,
-          }}>
-            {primaryCanonRole.name}
-          </span>
-          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 14, fontStyle: 'italic', color: 'rgba(234,232,242,0.32)', lineHeight: 1.5 }}>
-            {primaryCanonRole.function}
-          </span>
-        </div>
+        {/* Mirror statement — compassion register for Shadow-as-primary, standard for others */}
+        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isShadowPrimary ? 16 : 'clamp(15px, 1.8vw, 18px)', fontStyle: 'italic', color: isShadowPrimary ? 'rgba(234,232,242,0.52)' : `${dominantColor}80`, marginBottom: '2rem', lineHeight: 1.7, maxWidth: isShadowPrimary ? 640 : undefined }}>
+          {mirrorStatement}
+        </p>
+
+        <div style={{ marginBottom: '3.5rem' }} />
 
         {/* Blend bars */}
         <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -1126,7 +1137,7 @@ country: id.location?.country || '',
               {growthEdge.description}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <Progress value={growthEdge.score} color={DIM_COLOR[growthEdge.dimension]} className="flex-1" />
+              <Progress value={growthEdge.score} color={DIM_COLOR[growthEdge.dimension ?? dominantDimension]} className="flex-1" />
               <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 17, fontWeight: 300, color: 'rgba(234,232,242,0.38)' }}>
                 {growthEdge.score}
               </span>
@@ -1187,7 +1198,7 @@ country: id.location?.country || '',
                         {step.archetype.name}
                       </p>
                       <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 13, fontStyle: 'italic', color: `rgba(234,232,242,${alpha * 0.52})`, marginBottom: 12, lineHeight: 1.5 }}>
-                        {step.archetype.tagline}
+                        {step.archetype.name + (step.archetype.aiOutput ? ' — ' + step.archetype.aiOutput.split('.')[0] + '.' : '')}
                       </p>
                     </>
                   )}
@@ -1208,7 +1219,7 @@ country: id.location?.country || '',
         <SectionLabel n="06" color="#2db885">What to Do Next</SectionLabel>
 
         <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(26px, 3.8vw, 40px)', fontWeight: 300, color: '#eae8f2', lineHeight: 1.15, marginBottom: '0.6rem' }}>
-          Three practices for {DIMENSION_META[growthEdge.dimension].label.toLowerCase()}.
+          Three practices for {DIMENSION_META[growthEdge.dimension ?? dominantDimension].label.toLowerCase()}.
         </h2>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, fontStyle: 'italic', color: 'rgba(234,232,242,0.36)', marginBottom: '3.5rem', lineHeight: 1.7 }}>
           These are the exact actions your system is asking for. Expand each to understand why.
@@ -1220,7 +1231,7 @@ country: id.location?.country || '',
               key={i}
               practice={practice}
               index={i}
-              growthDim={growthEdge.dimension}
+              growthDim={growthEdge.dimension ?? dominantDimension}
             />
           ))}
         </div>
@@ -1236,10 +1247,10 @@ country: id.location?.country || '',
           {primary.archetype.name}
         </h2>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontStyle: 'italic', color: `${dominantColor}99`, marginBottom: '2.2rem' }}>
-          {primary.archetype.tagline}
+          {primary.archetype.name + (primary.archetype.aiOutput ? ' — ' + primary.archetype.aiOutput.split('.')[0] + '.' : '')}
         </p>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, color: 'rgba(234,232,242,0.60)', lineHeight: 1.84, maxWidth: 620, marginBottom: '3rem' }}>
-          {primary.archetype.description}
+          {primary.archetype.corePattern}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
@@ -1248,7 +1259,7 @@ country: id.location?.country || '',
               Expression
             </p>
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, color: 'rgba(234,232,242,0.56)', lineHeight: 1.8 }}>
-              {primary.archetype.expression}
+              {primary.archetype.whenAligned}
             </p>
           </Card>
           <Card className="p-6">
@@ -1256,18 +1267,18 @@ country: id.location?.country || '',
               Shadow
             </p>
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, color: 'rgba(234,232,242,0.46)', lineHeight: 1.8 }}>
-              {primary.archetype.shadow}
+              {primary.archetype.whenMisaligned}
             </p>
           </Card>
           <Card className="p-6">
             <p style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.38em', textTransform: 'uppercase', color: `${dominantColor}55`, marginBottom: 16 }}>
-              Canon · Growth Edge
+              Growth Edge
             </p>
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, color: 'rgba(234,232,242,0.56)', lineHeight: 1.8, marginBottom: 8 }}>
-              {primaryCanonRole.growth_edge}
+              {primary.archetype.growthEdge}
             </p>
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 13, fontStyle: 'italic', color: 'rgba(234,232,242,0.28)', lineHeight: 1.6 }}>
-              Shadow to integrate: {primaryCanonRole.shadow}
+              Shadow trigger: {primary.archetype.shadowTrigger}
             </p>
           </Card>
         </div>

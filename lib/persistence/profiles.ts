@@ -18,6 +18,7 @@ import type { ResultPayload } from '../types/results'
 import { buildArchetypeBlend } from '../archetypes/matcher'
 import { buildGrowthProfile } from '../pathways/growth'
 import { getBalance } from '../scoring/normalize'
+import type { SignalQuality } from '../scoring/signal'
 
 export interface SavedProfileState {
   id:         string
@@ -40,12 +41,16 @@ export async function saveProfileState(params: {
   evolutionState:      EvolutionState
   dominantDimension:   Dimension
   deficientDimension:  Dimension
+  signalQuality?:      SignalQuality
 }): Promise<SavedProfileState> {
   const {
     userId, assessmentId, scoring, archetypeBlend,
     growthProfile, narrative, evolutionState,
-    dominantDimension, deficientDimension,
+    dominantDimension, deficientDimension, signalQuality,
   } = params
+
+  // Canon-aligned fields from the primary archetype
+  const primaryArchetype = archetypeBlend.primary.archetype
 
   const { data, error } = await supabase
     .from('profile_states')
@@ -138,6 +143,28 @@ export async function saveProfileState(params: {
       },
 
       metadata: {},
+
+      // ── Canon-aligned fields (migration 005) ────────────────────────────
+      archetype_category: primaryArchetype.category ?? null,
+      signal_quality:     signalQuality ? {
+        confidence:       signalQuality.confidence,
+        isBalancedSystem: signalQuality.isBalancedSystem,
+        isFlatProfile:    signalQuality.isFlatProfile,
+        hasInflationBias: signalQuality.hasInflationBias,
+        hasLowVariance:   signalQuality.hasLowVariance,
+        flags:            signalQuality.flags,
+      } : {},
+      shadow_trigger:     primaryArchetype.shadowTrigger ?? null,
+      growth_edge_label:  primaryArchetype.growthEdge ?? null,
+      growth_dimension:   primaryArchetype.growthDimension ?? null,
+      canon_version:      '1.0',
+
+      // Life chapter, meaning level, flow state, calling orientation —
+      // populated by reflection engine when available (null on first assessment)
+      life_chapter:         null,
+      meaning_level:        null,
+      flow_state:           null,
+      calling_orientation:  null,
     })
     .select('id, created_at')
     .single()
@@ -256,7 +283,18 @@ export async function fetchAndReconstructPayload(
     energy_sources:    ctx.energy_sources     ?? '',
   }
 
-  return buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, {
+  // Reconstruction from persisted data — signal quality is not stored,
+  // so we provide a neutral fallback.
+  const fallbackSignal: SignalQuality = {
+    confidence: 'moderate',
+    isBalancedSystem: false,
+    isFlatProfile: false,
+    hasInflationBias: false,
+    hasLowVariance: false,
+    flags: [],
+  }
+
+  return buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, fallbackSignal, {
     assessmentId:   (ps.assessment_id  as string | null) ?? null,
     profileStateId: ps.id as string,
   })

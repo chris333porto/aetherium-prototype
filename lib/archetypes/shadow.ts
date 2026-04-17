@@ -1,129 +1,229 @@
 /**
  * shadow.ts
- * Shadow archetype logic — the suppressed or unintegrated self.
  *
- * The shadow is not the "worst" archetype. It is the one within the user's
- * current state that they are most divergent from — representing the qualities
- * they are avoiding, projecting, or refusing to embody.
- */
-
-import { ARCHETYPES, type Archetype } from './definitions'
-import type { DimensionScores, EvolutionState } from '../scoring/engine'
-
-export interface ShadowAnalysis {
-  archetype: Archetype
-  /** The raw shadow text from the archetype definition */
-  shadowText: string
-  /** A dynamic integration prompt based on what's suppressed */
-  integrationPath: string
-  /** Which dimensions most reveal the shadow dynamic */
-  shadowDimensions: string[]
-}
-
-/**
- * Find the shadow archetype: the archetype in the user's current state
- * that is the LEAST similar to the user's profile.
+ * CANONICAL SHADOW LOGIC — LOCKED
  *
- * Requires the full ranked match list (all archetypes, sorted by similarity desc).
+ * Canon rule: "Shadow should not be guessed from the second-closest match.
+ * It should be derived from the lowest dimension and the specific shadow
+ * trigger rules in the table."
+ *
+ * The 7 Shadow-category archetypes each have a specific trigger pattern
+ * mapped to dimension deficiencies. This module matches the user's weakest
+ * dimension(s) to the appropriate shadow archetype.
  */
-export function getShadowArchetype(
-  rankedMatches: Array<{ archetype: Archetype; similarity: number }>,
-  primaryState: EvolutionState
-): Archetype {
-  // Filter to same state as primary, take the least similar
-  const sameState = rankedMatches.filter(m => m.archetype.state === primaryState)
 
-  if (sameState.length > 0) {
-    return sameState[sameState.length - 1].archetype
-  }
+import { SHADOW_ARCHETYPES, type Archetype } from './definitions'
+import { normalizeScores } from './matcher'
+import type { DimensionScores } from '../scoring/engine'
+import type { Dimension } from '../assessment/questions'
 
-  // Fallback: global least similar
-  return rankedMatches[rankedMatches.length - 1].archetype
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export interface ShadowResult {
+  archetype:       Archetype
+  trigger:         string     // The shadow trigger from the canon
+  integrationPath: string     // What the user needs to develop
 }
+
+// ── Shadow trigger mapping ───────────────────────────────────────────────────
+//
+// Each shadow archetype activates based on specific dimensional patterns.
+// Derived from the canon vectors and shadow trigger descriptions.
+//
+// Overthinker: Air dominant, everything else collapsed → fear of wrong move
+// Drifter:     All low except slight Water → avoidance, no direction
+// Controller:  Fire+Earth high, Water crushed → fear of uncertainty
+// Avoider:     Everything passive/low → discomfort avoidance
+// People-Pleaser: Water dominant, Aether/Fire crushed → rejection fear
+// Perfectionist:  Air dominant, Water low → fear of imperfection
+// Burnout:     All dimensions near zero → system collapse
+
+const DIMS: Dimension[] = ['aether', 'fire', 'air', 'water', 'earth']
 
 /**
- * Build a full shadow analysis from the shadow archetype and the user's scores.
+ * Derive the shadow archetype from the user's scores.
+ *
+ * Algorithm:
+ *   1. Normalize to 0–5 scale
+ *   2. Check for Burnout (all dimensions ≤ 1.0)
+ *   3. Find weakest dimension
+ *   4. Match weakest dimension to shadow archetype trigger pattern
+ *   5. Use dimensional profile to disambiguate when multiple shadows
+ *      could apply to the same weak dimension
  */
-export function buildShadowAnalysis(
-  shadow: Archetype,
-  userScores: DimensionScores
-): ShadowAnalysis {
-  // Find dimensions where shadow profile diverges most from user
-  const dimensions = ['aether', 'fire', 'air', 'water', 'earth'] as const
-  const divergences = dimensions.map(dim => ({
-    dim,
-    delta: shadow.profile[dim] - userScores[dim],
-  }))
+export function deriveShadow(scores: DimensionScores): ShadowResult {
+  const normalized = normalizeScores(scores)
 
-  // Shadow dimensions = where the archetype scores MUCH higher than the user
-  // (these are the suppressed/projected qualities)
-  const shadowDimensions = divergences
-    .filter(d => d.delta > 20)
-    .sort((a, b) => b.delta - a.delta)
-    .slice(0, 2)
-    .map(d => d.dim)
-
-  const integrationPath = buildIntegrationPath(shadow, shadowDimensions)
-
-  return {
-    archetype: shadow,
-    shadowText: shadow.shadow,
-    integrationPath,
-    shadowDimensions,
-  }
-}
-
-function buildIntegrationPath(shadow: Archetype, shadowDims: string[]): string {
-  if (shadowDims.length === 0) {
-    return `The path to integrating your ${shadow.name} shadow begins with honest acknowledgment — the qualities you see in others that you haven't yet claimed in yourself.`
-  }
-
-  const dimLabels: Record<string, string> = {
-    aether: 'intention',
-    fire:   'volition',
-    air:    'clarity',
-    water:  'feeling',
-    earth:  'grounded action',
-  }
-
-  const labelList = shadowDims.map(d => dimLabels[d] ?? d).join(' and ')
-
-  return `Your ${shadow.name} shadow asks you to develop ${labelList}. Not to become this archetype — but to stop projecting or suppressing what it represents.`
-}
-
-/**
- * Quick lookup: get shadow archetype for a set of user scores + state.
- * Convenience wrapper that doesn't require pre-ranked matches.
- */
-export function computeShadow(
-  userScores: DimensionScores,
-  state: EvolutionState
-): ShadowAnalysis {
-  const stateArchetypes = ARCHETYPES.filter(a => a.state === state)
-
-  if (stateArchetypes.length === 0) {
-    // Fallback to full set
-    const fallback = ARCHETYPES[ARCHETYPES.length - 1]
-    return buildShadowAnalysis(fallback, userScores)
-  }
-
-  // Find least similar in state via euclidean distance (highest = most divergent)
-  let shadow = stateArchetypes[0]
-  let maxDist = -Infinity
-
-  for (const archetype of stateArchetypes) {
-    const dist = Math.sqrt(
-      Math.pow(userScores.aether - archetype.profile.aether, 2) +
-      Math.pow(userScores.fire   - archetype.profile.fire,   2) +
-      Math.pow(userScores.air    - archetype.profile.air,    2) +
-      Math.pow(userScores.water  - archetype.profile.water,  2) +
-      Math.pow(userScores.earth  - archetype.profile.earth,  2)
-    )
-    if (dist > maxDist) {
-      maxDist = dist
-      shadow = archetype
+  // Check for Burnout: all dimensions ≤ 1.0 on the 0–5 scale
+  const allCollapsed = DIMS.every(d => normalized[d] <= 1.0)
+  if (allCollapsed) {
+    const burnout = SHADOW_ARCHETYPES.find(a => a.id === 'burnout')!
+    return {
+      archetype: burnout,
+      trigger: burnout.shadowTrigger,
+      integrationPath: burnout.rebalancingPath,
     }
   }
 
-  return buildShadowAnalysis(shadow, userScores)
+  // Find weakest and strongest dimensions
+  let weakestVal = Infinity
+  let strongestVal = -Infinity
+  let strongest: Dimension = 'aether'
+
+  for (const dim of DIMS) {
+    if (normalized[dim] < weakestVal) weakestVal = normalized[dim]
+    if (normalized[dim] > strongestVal) { strongestVal = normalized[dim]; strongest = dim }
+  }
+
+  // Collect ALL dimensions tied for weakest (within 0.1 tolerance)
+  const weakDims = DIMS.filter(d => normalized[d] <= weakestVal + 0.1)
+
+  // Check for Drifter pattern: many dimensions collapsed, only 1-2 elevated
+  // When 3+ dimensions are at the floor, the dominant pattern is diffusion/drift
+  const collapsedCount = DIMS.filter(d => normalized[d] <= 1.5).length
+  if (collapsedCount >= 3) {
+    // If strongest is Water with everything else low → Drifter (diffuse, no direction)
+    // Unless Fire+Earth are both strong → Controller
+    if (normalized.fire >= 3.5 && normalized.earth >= 3.5) {
+      return {
+        archetype: SHADOW_ARCHETYPES.find(a => a.id === 'controller')!,
+        trigger: 'Fear of uncertainty',
+        integrationPath: 'Increase Water (Emotion); soften Fire (Volition).',
+      }
+    }
+    // If only Air is high → Overthinker
+    if (strongest === 'air' && normalized.air >= 3.5) {
+      const overthinker = SHADOW_ARCHETYPES.find(a => a.id === 'overthinker')!
+      return {
+        archetype: overthinker,
+        trigger: overthinker.shadowTrigger,
+        integrationPath: overthinker.rebalancingPath,
+      }
+    }
+    // Water dominant with Aether collapsed → People-Pleaser (connection without purpose)
+    if (strongest === 'water' && normalized.water >= 4.0 && normalized.aether <= 1.5) {
+      const pp = SHADOW_ARCHETYPES.find(a => a.id === 'people-pleaser')!
+      return {
+        archetype: pp,
+        trigger: pp.shadowTrigger,
+        integrationPath: pp.rebalancingPath,
+      }
+    }
+    // General collapse with slight/moderate Water → Drifter
+    if (strongest === 'water' || collapsedCount >= 4) {
+      const drifter = SHADOW_ARCHETYPES.find(a => a.id === 'drifter')!
+      return {
+        archetype: drifter,
+        trigger: drifter.shadowTrigger,
+        integrationPath: drifter.rebalancingPath,
+      }
+    }
+  }
+
+  // For single-weakest scenarios, use the standard matching
+  // Pick the most meaningful weakest: prefer fire (can't act), then water (can't feel),
+  // then aether (no direction), then earth (can't execute), then air
+  const weakPriority: Dimension[] = ['fire', 'water', 'aether', 'earth', 'air']
+  const weakest = weakDims.length === 1
+    ? weakDims[0]
+    : weakPriority.find(d => weakDims.includes(d)) ?? weakDims[0]
+
+  // Match based on weakest dimension + dominant dimension pattern
+  const shadow = matchShadowArchetype(weakest, strongest, normalized)
+
+  return {
+    archetype: shadow,
+    trigger: shadow.shadowTrigger,
+    integrationPath: shadow.rebalancingPath,
+  }
+}
+
+/**
+ * Shadow matching rules derived from canon:
+ *
+ * Weakest = Fire (can't act):
+ *   - If Air is strongest → Overthinker (thinking replaces acting)
+ *   - If Water is strongest → Drifter (feeling without direction)
+ *   - Otherwise → Avoider (general inaction)
+ *
+ * Weakest = Water (can't feel/trust):
+ *   - If Fire+Earth are strong → Controller (force without flow)
+ *   - If Air is strongest → Perfectionist (precision without heart)
+ *   - Otherwise → Controller (default when Water is crushed)
+ *
+ * Weakest = Aether (no direction):
+ *   - If Water is strongest → People-Pleaser (others' needs replace own purpose)
+ *   - If Fire is strongest → Rebel with no cause → maps to Drifter
+ *   - Otherwise → Drifter (movement without direction)
+ *
+ * Weakest = Earth (can't execute):
+ *   - If Air is strongest → Overthinker or Perfectionist
+ *   - If Aether is strongest → Drifter (vision without grounding)
+ *   - Otherwise → Avoider (avoidance of tangible output)
+ *
+ * Weakest = Air (can't think clearly):
+ *   - If Water is strongest → People-Pleaser (feeling overrides thinking)
+ *   - If Fire is strongest → Controller (force without discernment)
+ *   - Otherwise → Avoider
+ */
+function matchShadowArchetype(
+  weakest: Dimension,
+  strongest: Dimension,
+  normalized: { aether: number; fire: number; air: number; water: number; earth: number },
+): Archetype {
+  const find = (id: string) => SHADOW_ARCHETYPES.find(a => a.id === id)!
+
+  switch (weakest) {
+    case 'fire': {
+      if (strongest === 'air') return find('overthinker')
+      // Water dominant + Fire crushed: self-erasure pattern, not drift
+      // High Water (≥4) with no Fire = losing self in others' needs
+      if (strongest === 'water' && normalized.water >= 4.0) return find('people-pleaser')
+      if (strongest === 'water') return find('drifter')
+      return find('avoider')
+    }
+    case 'water': {
+      if (normalized.fire >= 3.5 && normalized.earth >= 3.5) return find('controller')
+      if (strongest === 'air') return find('perfectionist')
+      return find('controller')
+    }
+    case 'aether': {
+      if (strongest === 'water') return find('people-pleaser')
+      return find('drifter')
+    }
+    case 'earth': {
+      if (strongest === 'air' && normalized.air >= 4) return find('perfectionist')
+      if (strongest === 'air') return find('overthinker')
+      if (strongest === 'aether') return find('drifter')
+      return find('avoider')
+    }
+    case 'air': {
+      if (strongest === 'water') return find('people-pleaser')
+      // Fire dominant + Air weak: force without discernment = Controller pattern
+      // The Controller uses power without clarity, regardless of Earth level
+      if (strongest === 'fire' && normalized.fire >= 3.5) return find('controller')
+      if (strongest === 'fire') return find('controller')
+      return find('avoider')
+    }
+    default:
+      return find('avoider')
+  }
+}
+
+/**
+ * Build a human-readable shadow integration description.
+ */
+export function buildShadowIntegration(shadow: Archetype, userScores: DimensionScores): string {
+  if (shadow.growthDimension) {
+    const dimLabels: Record<Dimension, string> = {
+      aether: 'intention and purpose',
+      fire:   'will and action',
+      air:    'clarity and discernment',
+      water:  'feeling and trust',
+      earth:  'grounding and execution',
+    }
+    return `Your shadow pattern asks you to develop ${dimLabels[shadow.growthDimension]}. ${shadow.practiceOrientation}`
+  }
+  // Burnout / special cases
+  return shadow.rebalancingPath
 }

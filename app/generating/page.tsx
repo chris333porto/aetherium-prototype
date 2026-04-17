@@ -6,6 +6,7 @@ import { scoreAssessment } from '@/lib/scoring/engine'
 import { buildArchetypeBlend } from '@/lib/archetypes/matcher'
 import { buildGrowthProfile } from '@/lib/pathways/growth'
 import { parseNarrativeAnswers } from '@/lib/assessment/narrative'
+import { analyzeSignalQuality } from '@/lib/scoring/signal'
 import { buildResultPayload } from '@/lib/types/results'
 import { saveNarrativeAnswers, markAssessmentComplete, createAssessment } from '@/lib/persistence/assessments'
 import { saveProfileState, saveArchetypeResult } from '@/lib/persistence/profiles'
@@ -201,8 +202,9 @@ async function runScoringAndPersist(): Promise<void> {
 
   // 2. Score deterministically
   const scoring        = scoreAssessment(rawAnswers)
+  const signalQuality  = analyzeSignalQuality(rawAnswers, scoring.dimensions)
   const archetypeBlend = buildArchetypeBlend(scoring.dimensions)
-  const growthProfile  = buildGrowthProfile(scoring.dimensions)
+  const growthProfile  = buildGrowthProfile(scoring.dimensions, archetypeBlend.primary.archetype)
   const narrative      = parseNarrativeAnswers(narrativeRaw)
 
   const entries = Object.entries(scoring.dimensions) as [Dimension, number][]
@@ -210,7 +212,7 @@ async function runScoringAndPersist(): Promise<void> {
   const deficientDimension = entries.reduce((a, b) => b[1] < a[1] ? b : a)[0]
 
   // 3. Build local payload (IDs patched in below if Supabase succeeds)
-  const payload = buildResultPayload(scoring, archetypeBlend, growthProfile, narrative)
+  const payload = buildResultPayload(scoring, archetypeBlend, growthProfile, narrative, signalQuality)
 
   // 4. AI enrichment — this is the FIRST OpenAI call in the entire pre-dashboard flow.
   //    It only runs here, after the user has:
@@ -219,13 +221,22 @@ async function runScoringAndPersist(): Promise<void> {
   //      c) passed through the context step (even if skipped)
   //    Never fires earlier. /results-preview uses deterministic scoring only.
   try {
+    const primary = archetypeBlend.primary.archetype
     const enrichRes = await fetch('/api/generate-results', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        dimensionScores: scoring.dimensions,
-        // Use narrative fields if provided; fall back to "[not provided]" so the
-        // API route's required-field validation still passes.
+        dimensionScores:   scoring.dimensions,
+        dominantDimension,
+        deficientDimension,
+        overallScore:      scoring.overallScore,
+        coherenceScore:    scoring.coherenceScore,
+        archetypeName:     primary.name,
+        archetypeCategory: primary.category,
+        growthEdge:        primary.growthEdge,
+        shadowTrigger:     primary.shadowTrigger,
+        signalConfidence:  signalQuality.confidence,
+        isBalancedSystem:  signalQuality.isBalancedSystem,
         past:    narrative.recent_challenges  || '[not provided]',
         present: narrative.recurring_pattern  || '[not provided]',
         future:  narrative.desired_direction  || '[not provided]',
@@ -268,6 +279,7 @@ async function runScoringAndPersist(): Promise<void> {
       evolutionState:     growthProfile.currentState,
       dominantDimension,
       deficientDimension,
+      signalQuality,
     })
 
     await saveArchetypeResult({ profileStateId: savedProfile.id, archetypeBlend })

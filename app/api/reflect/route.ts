@@ -100,11 +100,13 @@ export async function POST(request: NextRequest) {
       const { data: ps } = await authSupabase
         .from('profile_states')
         .select(`
+          id,
           aether_score, fire_score, air_score, water_score, earth_score,
           coherence_score, evolution_state,
           dominant_dimension, deficient_dimension,
           narrative_life_phase, narrative_challenges, narrative_direction,
-          narrative_context
+          narrative_context,
+          growth_edge_label, shadow_trigger, archetype_blend
         `)
         .eq('assessment_id', latestAssessment.id)
         .order('created_at', { ascending: false })
@@ -161,6 +163,8 @@ export async function POST(request: NextRequest) {
       archetypeLabel:    (archetypeResult?.blend_title as string)
                          ?? (archetypeResult?.primary_archetype_name as string)
                          ?? null,
+      growthEdge:        (profileState?.growth_edge_label as string) ?? null,
+      shadowTrigger:     (profileState?.shadow_trigger as string) ?? null,
     }
 
     // ── 7. Run framework analysis ────────────────────────────────────────────
@@ -169,15 +173,38 @@ export async function POST(request: NextRequest) {
 
     // ── 8. Persist reading + guidance ────────────────────────────────────────
 
+    // Map canon outputs to legacy rite/stage columns for backward compat
+    // Life Chapter → Rite mapping (closest semantic equivalent)
+    const chapterToRite: Record<string, string> = {
+      initiation: 'INITIATION', expansion: 'AWAKENING', stability: 'EMBODIMENT',
+      plateau: 'ORIGIN', transition: 'CROSSING', disruption: 'ORDEAL',
+      contraction: 'SURRENDER', reconstruction: 'INITIATION', integration: 'ILLUMINATION',
+      emergence: 'OFFERING', overload: 'ORDEAL', renewal: 'AWAKENING',
+    }
+    // Meaning Level → Stage mapping (closest semantic equivalent)
+    const meaningToStage: Record<string, string> = {
+      survival: 'REACTIVE', desire: 'CONFORMING', belonging: 'CONFORMING',
+      achievement: 'BUILDING', awakening: 'AWAKENING', integration_meaning: 'INTEGRATING',
+      transcendence: 'TRANSCENDING',
+    }
+
     const reading = await saveFrameworkReading(authSupabase, {
       userId,
       reflectionId:     reflection.id,
-      rite:             analysis.rite.name,
-      riteConfidence:   analysis.rite.confidence,
-      stage:            analysis.stage.name,
-      stageConfidence:  analysis.stage.confidence,
+      // Legacy columns (mapped from canon for backward compat)
+      rite:             chapterToRite[analysis.life_chapter.name] ?? 'ORIGIN',
+      riteConfidence:   analysis.life_chapter.confidence,
+      stage:            meaningToStage[analysis.meaning_level.name] ?? 'BUILDING',
+      stageConfidence:  analysis.meaning_level.confidence,
       stateJson:        analysis.state,
       reasoningSummary: analysis.reasoning_summary,
+      // Canon-aligned columns (migration 006)
+      lifeChapter:            analysis.life_chapter.name,
+      lifeChapterConfidence:  analysis.life_chapter.confidence,
+      meaningLevel:           analysis.meaning_level.name,
+      meaningLevelConfidence: analysis.meaning_level.confidence,
+      flowSnapshot:           analysis.flow_snapshot,
+      callingSnapshot:        analysis.calling_snapshot,
     })
 
     const guidance = await saveGuidanceOutput(authSupabase, {
@@ -201,10 +228,12 @@ export async function POST(request: NextRequest) {
       data: {
         reflectionId: reflection.id,
         reading:      fullReading,
-        // Include the rite + stage explanations for immediate display
+        // Canon-aligned interpretations for display
         analysis: {
-          rite_explanation:  analysis.rite.explanation,
-          stage_explanation: analysis.stage.explanation,
+          life_chapter:  analysis.life_chapter,
+          meaning_level: analysis.meaning_level,
+          flow_snapshot: analysis.flow_snapshot,
+          calling_snapshot: analysis.calling_snapshot,
         },
       },
     })
