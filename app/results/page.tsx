@@ -1198,7 +1198,7 @@ country: id.location?.country || '',
                         {step.archetype.name}
                       </p>
                       <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 13, fontStyle: 'italic', color: `rgba(234,232,242,${alpha * 0.52})`, marginBottom: 12, lineHeight: 1.5 }}>
-                        {step.archetype.name + ' — ' + step.archetype.aiOutput.split('.')[0] + '.'}
+                        {step.archetype.name + (step.archetype.aiOutput ? ' — ' + step.archetype.aiOutput.split('.')[0] + '.' : '')}
                       </p>
                     </>
                   )}
@@ -1247,7 +1247,7 @@ country: id.location?.country || '',
           {primary.archetype.name}
         </h2>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontStyle: 'italic', color: `${dominantColor}99`, marginBottom: '2.2rem' }}>
-          {primary.archetype.name + ' — ' + primary.archetype.aiOutput.split('.')[0] + '.'}
+          {primary.archetype.name + (primary.archetype.aiOutput ? ' — ' + primary.archetype.aiOutput.split('.')[0] + '.' : '')}
         </p>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, color: 'rgba(234,232,242,0.60)', lineHeight: 1.84, maxWidth: 620, marginBottom: '3rem' }}>
           {primary.archetype.corePattern}

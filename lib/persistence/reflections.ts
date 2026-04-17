@@ -47,6 +47,14 @@ export type FrameworkReadingRow = {
   stage_confidence: 'low' | 'medium' | 'high'
   state_json:       StateJson
   reasoning_summary: string | null
+  // Canon-aligned columns (migration 006)
+  life_chapter?:            string | null
+  life_chapter_confidence?: string | null
+  meaning_level?:           string | null
+  meaning_level_confidence?: string | null
+  flow_snapshot?:           Record<string, number> | null
+  calling_snapshot?:        Record<string, number> | null
+  canon_version?:           string | null
 }
 
 export type GuidanceOutputRow = {
@@ -116,6 +124,13 @@ type SaveFrameworkReadingInput = {
   stageConfidence:  'low' | 'medium' | 'high'
   stateJson:        StateJson
   reasoningSummary: string | null
+  // Canon-aligned fields (migration 006)
+  lifeChapter?:            string | null
+  lifeChapterConfidence?:  string | null
+  meaningLevel?:           string | null
+  meaningLevelConfidence?: string | null
+  flowSnapshot?:           Record<string, number> | null
+  callingSnapshot?:        Record<string, number> | null
 }
 
 export async function saveFrameworkReading(
@@ -127,12 +142,21 @@ export async function saveFrameworkReading(
     .insert({
       user_id:           input.userId,
       reflection_id:     input.reflectionId,
+      // Legacy columns (backward compat)
       rite:              input.rite,
       rite_confidence:   input.riteConfidence,
       stage:             input.stage,
       stage_confidence:  input.stageConfidence,
       state_json:        input.stateJson,
       reasoning_summary: input.reasoningSummary,
+      // Canon-aligned columns (migration 006)
+      life_chapter:            input.lifeChapter ?? null,
+      life_chapter_confidence: input.lifeChapterConfidence ?? null,
+      meaning_level:           input.meaningLevel ?? null,
+      meaning_level_confidence: input.meaningLevelConfidence ?? null,
+      flow_snapshot:           input.flowSnapshot ?? null,
+      calling_snapshot:        input.callingSnapshot ?? null,
+      canon_version:           '1.0',
     })
     .select()
     .single()
@@ -185,6 +209,9 @@ export async function getLatestFullReading(
       id, created_at, user_id, reflection_id,
       rite, rite_confidence, stage, stage_confidence,
       state_json, reasoning_summary,
+      life_chapter, life_chapter_confidence,
+      meaning_level, meaning_level_confidence,
+      flow_snapshot, calling_snapshot, canon_version,
       guidance_outputs (
         id, created_at, user_id, framework_reading_id,
         what_is_happening, what_is_being_asked,

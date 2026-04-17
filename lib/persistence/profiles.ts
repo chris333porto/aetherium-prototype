@@ -41,12 +41,16 @@ export async function saveProfileState(params: {
   evolutionState:      EvolutionState
   dominantDimension:   Dimension
   deficientDimension:  Dimension
+  signalQuality?:      SignalQuality
 }): Promise<SavedProfileState> {
   const {
     userId, assessmentId, scoring, archetypeBlend,
     growthProfile, narrative, evolutionState,
-    dominantDimension, deficientDimension,
+    dominantDimension, deficientDimension, signalQuality,
   } = params
+
+  // Canon-aligned fields from the primary archetype
+  const primaryArchetype = archetypeBlend.primary.archetype
 
   const { data, error } = await supabase
     .from('profile_states')
@@ -139,6 +143,28 @@ export async function saveProfileState(params: {
       },
 
       metadata: {},
+
+      // ── Canon-aligned fields (migration 005) ────────────────────────────
+      archetype_category: primaryArchetype.category ?? null,
+      signal_quality:     signalQuality ? {
+        confidence:       signalQuality.confidence,
+        isBalancedSystem: signalQuality.isBalancedSystem,
+        isFlatProfile:    signalQuality.isFlatProfile,
+        hasInflationBias: signalQuality.hasInflationBias,
+        hasLowVariance:   signalQuality.hasLowVariance,
+        flags:            signalQuality.flags,
+      } : {},
+      shadow_trigger:     primaryArchetype.shadowTrigger ?? null,
+      growth_edge_label:  primaryArchetype.growthEdge ?? null,
+      growth_dimension:   primaryArchetype.growthDimension ?? null,
+      canon_version:      '1.0',
+
+      // Life chapter, meaning level, flow state, calling orientation —
+      // populated by reflection engine when available (null on first assessment)
+      life_chapter:         null,
+      meaning_level:        null,
+      flow_state:           null,
+      calling_orientation:  null,
     })
     .select('id, created_at')
     .single()

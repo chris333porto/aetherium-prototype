@@ -80,6 +80,18 @@ export type ProfileState = {
   metadata: Record<string, unknown>
   // Legacy column kept for backward compat
   version:  number
+
+  // Canon-aligned columns (migration 005)
+  archetype_category?:   string | null
+  signal_quality?:       Record<string, unknown>
+  life_chapter?:         string | null
+  meaning_level?:        string | null
+  flow_state?:           Record<string, number> | null
+  calling_orientation?:  Record<string, number> | null
+  shadow_trigger?:       string | null
+  growth_edge_label?:    string | null
+  growth_dimension?:     string | null
+  canon_version?:        string | null
 }
 
 export type ArchetypeBlendRecord = {

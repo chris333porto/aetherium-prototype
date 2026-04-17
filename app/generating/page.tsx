@@ -221,13 +221,22 @@ async function runScoringAndPersist(): Promise<void> {
   //      c) passed through the context step (even if skipped)
   //    Never fires earlier. /results-preview uses deterministic scoring only.
   try {
+    const primary = archetypeBlend.primary.archetype
     const enrichRes = await fetch('/api/generate-results', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        dimensionScores: scoring.dimensions,
-        // Use narrative fields if provided; fall back to "[not provided]" so the
-        // API route's required-field validation still passes.
+        dimensionScores:   scoring.dimensions,
+        dominantDimension,
+        deficientDimension,
+        overallScore:      scoring.overallScore,
+        coherenceScore:    scoring.coherenceScore,
+        archetypeName:     primary.name,
+        archetypeCategory: primary.category,
+        growthEdge:        primary.growthEdge,
+        shadowTrigger:     primary.shadowTrigger,
+        signalConfidence:  signalQuality.confidence,
+        isBalancedSystem:  signalQuality.isBalancedSystem,
         past:    narrative.recent_challenges  || '[not provided]',
         present: narrative.recurring_pattern  || '[not provided]',
         future:  narrative.desired_direction  || '[not provided]',
@@ -270,6 +279,7 @@ async function runScoringAndPersist(): Promise<void> {
       evolutionState:     growthProfile.currentState,
       dominantDimension,
       deficientDimension,
+      signalQuality,
     })
 
     await saveArchetypeResult({ profileStateId: savedProfile.id, archetypeBlend })
