@@ -23,7 +23,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter }                     from 'next/navigation'
 import Link                              from 'next/link'
-import { DimensionChart }               from '@/components/DimensionChart'
+import { DimensionMandala }               from '@/components/DimensionMandala'
 import { EnergyField }                  from '@/components/EnergyField'
 import { Progress }                     from '@/components/ui/Progress'
 import { Button }                       from '@/components/ui/Button'
@@ -1048,7 +1048,7 @@ country: id.location?.country || '',
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '4.5rem', alignItems: 'start' }}>
           {/* Radar + coherence */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28 }}>
-            <DimensionChart scores={dimensions} size={260} animated />
+            <DimensionMandala scores={dimensions} size={260} />
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.38em', textTransform: 'uppercase', color: 'rgba(234,232,242,0.2)', marginBottom: 8 }}>
                 Coherence

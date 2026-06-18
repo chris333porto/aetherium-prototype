@@ -24,7 +24,7 @@ import type { Dimension }         from '@/lib/assessment/questions'
 import type { ArchetypeBlendRecord, ProfileState } from '@/lib/supabase'
 import type { FullReading }       from '@/lib/persistence/reflections'
 import { ARCHETYPES, type Archetype } from '@/lib/archetypes/definitions'
-import { DimensionChart }         from '@/components/DimensionChart'
+import { DimensionMandala }         from '@/components/DimensionMandala'
 import { EnergyField }            from '@/components/EnergyField'
 import type { DimensionScores }   from '@/lib/scoring/engine'
 
@@ -764,7 +764,7 @@ export default function DashboardPage() {
         <Card style={{ marginBottom: '0.8rem' }}>
           <Label>Your System</Label>
           <div style={{ display: 'flex', justifyContent: 'center', margin: '0.3rem 0 0.8rem' }}>
-            <DimensionChart scores={scores as DimensionScores} size={180} />
+            <DimensionMandala scores={scores as DimensionScores} size={180} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', alignItems: 'center', marginBottom: '0.8rem' }}>
             <span style={{ fontFamily: "'Cinzel', serif", fontSize: 7, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(234,232,242,0.18)' }}>Coherence</span>
