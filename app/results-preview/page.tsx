@@ -19,7 +19,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter }            from 'next/navigation'
-import { DimensionChart }       from '@/components/DimensionChart'
+import { DimensionMandala }       from '@/components/DimensionMandala'
 import { EnergyField }          from '@/components/EnergyField'
 import {
   DIMENSION_META,
@@ -195,7 +195,7 @@ export default function ResultsPreviewPage() {
           display: 'flex', justifyContent: 'center',
           marginBottom: '2.5rem',
         }}>
-          <DimensionChart scores={dimensions} size={240} />
+          <DimensionMandala scores={dimensions} size={240} />
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════

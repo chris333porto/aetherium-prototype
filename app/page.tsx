@@ -552,34 +552,6 @@ export default function LandingPage() {
 
       <Kigo />
 
-      {/* ══ 9. VALIDATION — Testimonials ════════════ */}
-      <section className="s-band" style={{ paddingTop: 0 }}>
-        <ScrollReveal>
-          <div className="s-center">
-            <span className="hp-eyebrow">What people found</span>
-            <h2 className="hp-section-h">The Mirror<br />Does Not Flatter</h2>
-          </div>
-        </ScrollReveal>
-        <div className="testi-grid" style={{ maxWidth: 900, marginLeft: 'auto', marginRight: 'auto' }}>
-          {[
-            { text: "I've done MBTI, Enneagram, Human Design. Nothing came close to the clarity Aetherium gave me. The shadow analysis alone was worth more than a year of therapy.", name: 'Marcus R.', arch: 'Architect · Integrated Phase' },
-            { text: "I kept wondering why I had so much clarity but couldn't execute anything. Aetherium named it in one word — and then showed me the exact path out.", name: 'Priya S.', arch: 'Strategist · Emerging Phase' },
-            { text: "I didn't expect a visual to hit that hard. My Avatar made me emotional. It was like seeing myself from the outside for the first time.", name: 'Daniel W.', arch: 'Seeker · Emerging Phase' },
-          ].map((t, i) => (
-            <ScrollReveal key={t.name} delay={(i % 3) as 0 | 1 | 2}>
-              <div className="testi">
-                <div className="testi-q">&ldquo;</div>
-                <p className="testi-text">{t.text}</p>
-                <div className="testi-name">{t.name}</div>
-                <div className="testi-arch">{t.arch}</div>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      </section>
-
-      <Kigo />
-
       {/* ══ Philosophy ══════════════════════════════ */}
       <section className="s-band" style={{ paddingTop: 0 }}>
         <ScrollReveal>

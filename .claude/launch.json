@@ -2,11 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "aetherium-dev",
-      "runtimeExecutable": "/bin/sh",
-      "runtimeArgs": ["-c", "PATH=/usr/local/bin:/usr/bin:/bin node node_modules/.bin/next dev"],
-      "cwd": "/Users/christopherporto/prototype",
-      "port": 3000,
+      "name": "aetherium-gateway-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "4055"],
+      "cwd": "/Users/christopherporto/LifeOS/05_WORK/02-Active/Aetherium/02-Active/aetherium-home/current",
+      "port": 4055,
       "autoPort": false
     }
   ]
