@@ -105,7 +105,7 @@ export default function LandingPage() {
         </p>
 
         <div className="hero-cta-wrap">
-          <Link href="/onboarding/welcome" className="cta-hero">Begin Self Discovery</Link>
+          <Link href="/discovery" className="cta-hero">Begin Self Discovery</Link>
         </div>
 
         <p className="hero-time">
@@ -579,7 +579,7 @@ export default function LandingPage() {
           <p className="final-sub">
             Know yourself. Map your life. Move with intention.
           </p>
-          <Link href="/onboarding/welcome" className="cta-hero">Begin Self Discovery</Link>
+          <Link href="/discovery" className="cta-hero">Begin Self Discovery</Link>
           <p className="final-note">
             <span>Free</span> &nbsp;·&nbsp; ~5–7 minutes &nbsp;·&nbsp; Instant results &nbsp;·&nbsp;{' '}
             <span>No account required</span>
