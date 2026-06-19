@@ -153,9 +153,47 @@ function WelcomeHomeContent({
   const { archetype, dimensionScores, dominantDimension } = computed
   const activeColor = REALMS[dominantDimension].color
 
-  // Full aiOutput split by sentence for staggered fade-in (same pattern as
-  // the previous reveal — just moved here now)
-  const sentences = useMemo(() => splitSentences(archetype.aiOutput), [archetype.aiOutput])
+  // AI-personalized reading of THIS person's specific result (five-energy scores
+  // + matched archetype + canon fields). Progressive enhancement: falls back to
+  // the static archetype mirror if it fails or the key is unset, so the page
+  // never depends on it.
+  const [reading, setReading] = useState<string | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const r = await fetch('/api/discovery-reading', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            archetypeName: archetype.name,
+            archetypeCategory: archetype.category,
+            corePattern: archetype.corePattern,
+            coreTension: archetype.coreTension,
+            whenAligned: archetype.whenAligned,
+            whenMisaligned: archetype.whenMisaligned,
+            rebalancingPath: archetype.rebalancingPath,
+            practiceOrientation: archetype.practiceOrientation,
+            growthEdge: archetype.growthEdge,
+            shadowTrigger: archetype.shadowTrigger,
+            dominantDimension,
+            dimensionScores,
+          }),
+        })
+        const data = (await r.json()) as { ok?: boolean; reading?: string }
+        if (!cancelled && data?.ok && data.reading) setReading(data.reading)
+      } catch { /* keep the static fallback */ }
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // The displayed mirror: the AI reading once it lands, else the static canon.
+  const sentences = useMemo(
+    () => splitSentences(reading ?? archetype.aiOutput),
+    [reading, archetype.aiOutput],
+  )
 
   // ── Handoff token ─────────────────────────────────────────────────────────
   // Mint a stable token once, persist the full result to discovery_results so
